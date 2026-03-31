@@ -8,13 +8,13 @@ This app does exactly that. Install it on a phone, laptop, or desktop and it kee
 
 ## Platforms
 
-| Platform | Status | Background scheduling |
-|----------|--------|-----------------------|
-| Android  | ✅ Ready | WorkManager (survives doze) |
-| Linux    | ✅ Ready | JVM timer + system tray — or [systemd timer](#linux-headless-alternative-systemd) for headless boxes |
-| Windows  | ✅ Ready | JVM timer + system tray |
-| macOS    | ✅ Ready | JVM timer + system tray |
-| iOS      | 🚧 Planned | BGAppRefreshTask |
+| Platform | Status | Background scheduling                                                                                 |
+|----------|--------|-------------------------------------------------------------------------------------------------------|
+| Android  | ✅ Ready | WorkManager (survives doze)                                                                           |
+| Linux    | ✅ Ready | JVM timer + system tray — or [systemd timer](#linux-headless-alternative-systemd) for headless setups |
+| Windows  | ✅ Ready | JVM timer + system tray                                                                               |
+| macOS    | ✅ Ready | JVM timer + system tray — or [launchd agent](#macos-headless-alternative-launchd) for headless setups |
+| iOS      | 🚧 Planned | BGAppRefreshTask                                                                                      |
 
 Single codebase — built with Kotlin Multiplatform and Compose Multiplatform.
 
@@ -115,6 +115,63 @@ journalctl -u pulseweaver-heartbeat.service -n 5
 ```
 
 > **Security note:** The example above inlines the API key in the unit file for simplicity. For production use, consider systemd's built-in credential management (`LoadCredential=` / `LoadCredentialEncrypted=`, available since systemd 247) which injects secrets at runtime via `$CREDENTIALS_DIRECTORY` — keeping them out of unit files, environment variables, and process listings. See the [systemd credentials docs](https://systemd.io/CREDENTIALS/) for details.
+
+## macOS headless alternative (launchd)
+
+On a Mac mini server or any headless macOS machine, a **launchd agent** with `curl` replaces the full app.
+
+#### 1. Create the plist
+
+`~/Library/LaunchAgents/com.pulseweaver.heartbeat.plist`
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.pulseweaver.heartbeat</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>curl</string>
+        <string>-sf</string>
+        <string>-X</string>
+        <string>POST</string>
+        <string>-H</string>
+        <string>X-API-Key: wdk_YOUR_KEY_HERE</string>
+        <string>https://pw.example.com/api/v1/heartbeat</string>
+    </array>
+
+    <key>StartInterval</key>
+    <integer>300</integer>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardErrorPath</key>
+    <string>/tmp/pulseweaver-heartbeat.err</string>
+</dict>
+</plist>
+```
+
+#### 2. Load and start
+
+```bash
+launchctl load ~/Library/LaunchAgents/com.pulseweaver.heartbeat.plist
+
+# Verify it's loaded
+launchctl list | grep pulseweaver
+
+# Test a manual run
+launchctl start com.pulseweaver.heartbeat
+cat /tmp/pulseweaver-heartbeat.err
+```
+
+To stop and unload: `launchctl unload ~/Library/LaunchAgents/com.pulseweaver.heartbeat.plist`
+
+> **Security note:** The API key is inlined in the plist for simplicity. For better secret handling, store the key in the macOS Keychain and retrieve it with `security find-generic-password` in a wrapper script, or use an environment variable sourced from a file with restricted permissions (`chmod 600`).
 
 ## API
 
