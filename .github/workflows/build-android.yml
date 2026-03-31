@@ -7,11 +7,9 @@ on:
   pull_request:
 
 jobs:
-  test:
-    name: Build
-    runs-on: macOS-latest
-    # Only run build in template repo
-    if: github.event.repository.name == 'KMP-App-Template' && github.repository_owner == 'Kotlin'
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
