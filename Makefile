@@ -1,7 +1,8 @@
 .PHONY: help test build-android build-desktop run clean \
        package-deb package-dmg package-msi package-all \
        release release-patch release-minor release-major \
-       generate-keystore setup-secrets lint
+       generate-keystore setup-secrets lint \
+       install-hooks version
 
 VERSION ?= $(shell (git describe --tags --abbrev=0 2>/dev/null || echo v1.0.0) | sed 's/^v//')
 NEXT_PATCH = $(shell echo $(VERSION) | awk -F. '{printf "%d.%d.%d", $$1, $$2, $$3+1}')
@@ -82,6 +83,9 @@ release-major: ## Tag and push a major release (X+1.0.0)
 # Setup
 # ---------------------------------------------------------------------------
 
+version: ## Show current version
+	@echo "v$(VERSION)"
+
 generate-keystore: ## Generate a new Android release keystore
 	@if [ -f release.keystore ]; then echo "release.keystore already exists"; exit 1; fi
 	keytool -genkeypair -v -keystore release.keystore -alias pulseweaver \
@@ -99,6 +103,15 @@ setup-secrets: ## Print instructions for GitHub Actions secrets
 	@echo "  KEYSTORE_PASSWORD   the password you chose during keytool"
 	@echo "  KEY_ALIAS           pulseweaver  (or whatever alias you used)"
 	@echo ""
+
+# ---------------------------------------------------------------------------
+# Hooks
+# ---------------------------------------------------------------------------
+
+install-hooks: ## Install git hooks (run once after cloning)
+	@ln -sf "$(PWD)/scripts/commit-msg" "$(PWD)/.git/hooks/commit-msg"
+	@chmod +x "$(PWD)/.git/hooks/commit-msg"
+	@echo "✅ Git hooks installed."
 
 version: ## Show current version
 	@echo "$(VERSION)"

@@ -131,6 +131,7 @@ jobs:
         run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - name: Build .msi
+        shell: bash
         run: ./gradlew :shared:packageMsi -PappVersion=${{ steps.version.outputs.version }} --stacktrace
 
       - name: Rename artifact
@@ -152,14 +153,45 @@ jobs:
     needs: [build-android, build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0
+
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           merge-multiple: true
 
+      - name: Generate changelog
+        uses: orhun/git-cliff-action@4cfa85f3bef62b9c6aedeaadccf5fbaee97b4b00 # v4
+        id: cliff
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Update CHANGELOG.md
+        uses: orhun/git-cliff-action@4cfa85f3bef62b9c6aedeaadccf5fbaee97b4b00 # v4
+        with:
+          config: cliff.toml
+          args: --output CHANGELOG.md
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Commit CHANGELOG.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git diff --staged --quiet || git commit -m "chore(ci): update CHANGELOG.md for ${{ github.ref_name }}"
+          git push origin HEAD:main
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@153bb8e04406b158c6c84fc1615b65b24149a1fe # v2
         with:
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
           files: |
             PulseWeaver-Heartbeat-*-android.apk
             PulseWeaver-Heartbeat-*-linux-amd64.deb
