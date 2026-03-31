@@ -44,7 +44,7 @@ jobs:
           APK=$(find androidApp/build/outputs/apk/release -name '*.apk' | head -1)
           cp "$APK" "PulseWeaver-Heartbeat-${{ github.ref_name }}-android.apk"
 
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: android-apk
           path: PulseWeaver-Heartbeat-*-android.apk
@@ -75,7 +75,7 @@ jobs:
           DEB=$(find shared/build/compose/binaries/main/deb -name '*.deb' | head -1)
           cp "$DEB" "PulseWeaver-Heartbeat-${{ github.ref_name }}-linux-amd64.deb"
 
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: linux-deb
           path: PulseWeaver-Heartbeat-*-linux-amd64.deb
@@ -106,7 +106,7 @@ jobs:
           DMG=$(find shared/build/compose/binaries/main/dmg -name '*.dmg' | head -1)
           cp "$DMG" "PulseWeaver-Heartbeat-${{ github.ref_name }}-macos.dmg"
 
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: macos-dmg
           path: PulseWeaver-Heartbeat-*-macos.dmg
@@ -140,7 +140,7 @@ jobs:
           MSI=$(find shared/build/compose/binaries/main/msi -name '*.msi' | head -1)
           cp "$MSI" "PulseWeaver-Heartbeat-${{ github.ref_name }}-windows.msi"
 
-      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
+      - uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: windows-msi
           path: PulseWeaver-Heartbeat-*-windows.msi
