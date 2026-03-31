@@ -11,12 +11,14 @@ This app does exactly that. Install it on a phone, laptop, or desktop and it kee
 | Platform | Status | Background scheduling                                                                                 |
 |----------|--------|-------------------------------------------------------------------------------------------------------|
 | Android  | ✅ Ready | WorkManager (survives doze)                                                                           |
-| Linux    | ✅ Ready | JVM timer + system tray — or [systemd timer](#linux-headless-alternative-systemd) for headless setups |
-| Windows  | ✅ Ready | JVM timer + system tray                                                                               |
-| macOS    | ✅ Ready | JVM timer + system tray — or [launchd agent](#macos-headless-alternative-launchd) for headless setups |
+| Linux    | ✅ Ready | JVM timer + system tray |
+| Windows  | ✅ Ready | JVM timer + system tray |
+| macOS    | ✅ Ready | JVM timer + system tray |
 | iOS      | 🚧 Planned | BGAppRefreshTask                                                                                      |
 
 Single codebase — built with Kotlin Multiplatform and Compose Multiplatform.
+
+> **Running on a headless box?** You don't need this app — a simple `curl` + systemd timer (Linux) or launchd agent (macOS) works with zero dependencies. See the [Lightweight Heartbeat Clients](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Lightweight-Heartbeat-Clients.md) guide.
 
 ## Features
 
@@ -63,115 +65,6 @@ Open the app and fill in:
 Flip the switch to start. On desktop the app moves to the system tray.
 
 > **Tip for mobile / dynamic IP devices:** Enable the **address lease** on the PulseWeaver server for that device and set the TTL slightly above the heartbeat interval (e.g. 20 min TTL for a 15 min interval). This way, if a heartbeat is delayed by a network switch or doze cycle, the IP doesn't expire prematurely.
-
-## Linux headless alternative (systemd)
-
-If you're running on a headless Linux box (server, Raspberry Pi, VPS…) you don't need the full GUI app. A systemd **timer + oneshot service** using `curl` does the job with zero dependencies.
-
-#### 1. Create the service
-
-`/etc/systemd/system/pulseweaver-heartbeat.service`
-
-```ini
-[Unit]
-Description=PulseWeaver heartbeat ping
-Wants=network-online.target
-After=network-online.target
-
-[Service]
-Type=oneshot
-ExecStart=curl -sf -X POST -H "X-API-Key: wdk_YOUR_KEY_HERE" https://pw.example.com/api/v1/heartbeat
-```
-
-#### 2. Create the timer
-
-`/etc/systemd/system/pulseweaver-heartbeat.timer`
-
-```ini
-[Unit]
-Description=Send PulseWeaver heartbeat every 5 minutes
-
-[Timer]
-OnBootSec=30s
-OnUnitActiveSec=5min
-AccuracySec=30s
-
-[Install]
-WantedBy=timers.target
-```
-
-#### 3. Enable and start
-
-```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now pulseweaver-heartbeat.timer
-
-# Verify it's scheduled
-systemctl list-timers pulseweaver-heartbeat.timer
-
-# Test a manual run
-sudo systemctl start pulseweaver-heartbeat.service
-journalctl -u pulseweaver-heartbeat.service -n 5
-```
-
-> **Security note:** The example above inlines the API key in the unit file for simplicity. For production use, consider systemd's built-in credential management (`LoadCredential=` / `LoadCredentialEncrypted=`, available since systemd 247) which injects secrets at runtime via `$CREDENTIALS_DIRECTORY` — keeping them out of unit files, environment variables, and process listings. See the [systemd credentials docs](https://systemd.io/CREDENTIALS/) for details.
-
-## macOS headless alternative (launchd)
-
-On a Mac mini server or any headless macOS machine, a **launchd agent** with `curl` replaces the full app.
-
-#### 1. Create the plist
-
-`~/Library/LaunchAgents/com.pulseweaver.heartbeat.plist`
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
-  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>Label</key>
-    <string>com.pulseweaver.heartbeat</string>
-
-    <key>ProgramArguments</key>
-    <array>
-        <string>curl</string>
-        <string>-sf</string>
-        <string>-X</string>
-        <string>POST</string>
-        <string>-H</string>
-        <string>X-API-Key: wdk_YOUR_KEY_HERE</string>
-        <string>https://pw.example.com/api/v1/heartbeat</string>
-    </array>
-
-    <key>StartInterval</key>
-    <integer>300</integer>
-
-    <key>RunAtLoad</key>
-    <true/>
-
-    <key>StandardErrorPath</key>
-    <string>/tmp/pulseweaver-heartbeat.err</string>
-</dict>
-</plist>
-```
-
-#### 2. Load and start
-
-```bash
-launchctl load ~/Library/LaunchAgents/com.pulseweaver.heartbeat.plist
-
-# Verify it's loaded
-launchctl list | grep pulseweaver
-
-# Test a manual run
-launchctl start com.pulseweaver.heartbeat
-cat /tmp/pulseweaver-heartbeat.err
-```
-
-To stop and unload: `launchctl unload ~/Library/LaunchAgents/com.pulseweaver.heartbeat.plist`
-
-> **Security note:** The API key is inlined in the plist for simplicity. For better secret handling, store the key in the macOS Keychain and retrieve it with `security find-generic-password` in a wrapper script, or use an environment variable sourced from a file with restricted permissions (`chmod 600`).
 
 ## API
 
