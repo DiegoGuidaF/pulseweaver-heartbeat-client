@@ -88,6 +88,8 @@ dependencies {
     androidRuntimeClasspath(libs.compose.uiTooling)
 }
 
+val appVersion = project.findProperty("appVersion")?.toString() ?: "1.0.0"
+
 compose.desktop {
     application {
         mainClass = "com.pulseweaver.heartbeat.MainKt"
@@ -95,7 +97,7 @@ compose.desktop {
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "PulseWeaver Heartbeat"
-            packageVersion = "1.0.0"
+            packageVersion = appVersion
         }
     }
 }
