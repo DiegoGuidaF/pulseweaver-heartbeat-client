@@ -51,7 +51,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -118,12 +117,10 @@ fun HeartbeatScreen(
     val configStore = remember { ConfigStore() }
     val networkMonitor = remember { NetworkMonitor() }
 
-    val currentConfig by rememberUpdatedState(config)
-
     suspend fun sendHeartbeat(trigger: String) {
         if (isSending) return
         isSending = true
-        val result = client.send(currentConfig, trigger)
+        val result = client.send(config, trigger)
         lastResult = result
         lastResultTime = currentTimeForDisplay()
         lastResultMark = TimeSource.Monotonic.markNow()
@@ -140,7 +137,6 @@ fun HeartbeatScreen(
         if (config.enabled) {
             networkMonitor.startMonitoring { coroutineScope.launch { sendHeartbeat("network_change") } }
             scheduler.schedulePeriodicHeartbeat(config.intervalSeconds) { sendHeartbeat("scheduled") }
-            sendHeartbeat("scheduled")
         }
     }
 
