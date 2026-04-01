@@ -12,7 +12,7 @@ updates:
       gradle-minor-patch:
         update-types: ["minor", "patch"]
 
-  # GitHub Actions
+  # GitHub Actions — group minor/patch; major bumps (v4→v5) get individual PRs
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -23,3 +23,4 @@ updates:
     groups:
       github-actions:
         patterns: ["*"]
+        update-types: ["minor", "patch"]
