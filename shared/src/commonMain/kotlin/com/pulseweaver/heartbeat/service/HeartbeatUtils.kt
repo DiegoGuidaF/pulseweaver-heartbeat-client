@@ -9,6 +9,21 @@ import com.pulseweaver.heartbeat.config.ThemeMode
 object HeartbeatUtils {
 
     /**
+     * Human-readable elapsed time since a past epoch timestamp.
+     *
+     *     formatElapsed(epochMs, now)  →  "<1m ago" | "5m ago" | "2h ago" | "3d ago"
+     */
+    fun formatElapsed(epochMs: Long, nowMs: Long): String {
+        val seconds = (nowMs - epochMs) / 1000
+        return when {
+            seconds < 60 -> "<1m ago"
+            seconds < 3600 -> "${seconds / 60}m ago"
+            seconds < 86400 -> "${seconds / 3600}h ago"
+            else -> "${seconds / 86400}d ago"
+        }
+    }
+
+    /**
      * Human-readable duration string.
      *
      *     formatDuration(0)    → "0s"

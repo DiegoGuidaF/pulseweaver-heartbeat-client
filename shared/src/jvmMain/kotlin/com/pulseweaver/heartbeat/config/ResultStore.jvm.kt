@@ -18,16 +18,18 @@ actual class ResultStore actual constructor() {
                 trigger = prefs.get("trigger", ""),
             ),
             time = prefs.get("time", ""),
+            epochMs = prefs.getLong("epochMs", 0L),
         )
     }
 
-    actual suspend fun save(result: HeartbeatResult, time: String) {
+    actual suspend fun save(result: HeartbeatResult, time: String, epochMs: Long) {
         prefs.put("success", result.success.toString())
         prefs.put("message", result.message)
         if (result.hint != null) prefs.put("hint", result.hint) else prefs.remove("hint")
         if (result.ip != null) prefs.put("ip", result.ip) else prefs.remove("ip")
         prefs.put("trigger", result.trigger)
         prefs.put("time", time)
+        prefs.putLong("epochMs", epochMs)
         prefs.flush()
     }
 }

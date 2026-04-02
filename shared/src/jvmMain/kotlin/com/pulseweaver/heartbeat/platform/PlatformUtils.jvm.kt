@@ -7,4 +7,6 @@ private val TIME_FMT = DateTimeFormatter.ofPattern("HH:mm:ss")
 
 actual fun currentTimeForDisplay(): String = LocalTime.now().format(TIME_FMT)
 
+actual fun currentEpochMs(): Long = System.currentTimeMillis()
+
 actual val platformHasBackgroundLimit: Boolean = false

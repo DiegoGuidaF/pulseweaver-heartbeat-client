@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.pulseweaver.heartbeat.ApplicationContextHolder
@@ -31,10 +32,11 @@ actual class ResultStore actual constructor() {
                 trigger = prefs[Keys.TRIGGER] ?: "",
             ),
             time = prefs[Keys.TIME] ?: "",
+            epochMs = prefs[Keys.EPOCH_MS] ?: 0L,
         )
     }
 
-    actual suspend fun save(result: HeartbeatResult, time: String) {
+    actual suspend fun save(result: HeartbeatResult, time: String, epochMs: Long) {
         ds.edit { prefs ->
             prefs[Keys.SUCCESS] = result.success
             prefs[Keys.MESSAGE] = result.message
@@ -42,6 +44,7 @@ actual class ResultStore actual constructor() {
             if (result.ip != null) prefs[Keys.IP] = result.ip else prefs.remove(Keys.IP)
             prefs[Keys.TRIGGER] = result.trigger
             prefs[Keys.TIME] = time
+            prefs[Keys.EPOCH_MS] = epochMs
         }
     }
 
@@ -52,5 +55,6 @@ actual class ResultStore actual constructor() {
         val IP = stringPreferencesKey("last_ip")
         val TRIGGER = stringPreferencesKey("last_trigger")
         val TIME = stringPreferencesKey("last_time")
+        val EPOCH_MS = longPreferencesKey("last_epoch_ms")
     }
 }

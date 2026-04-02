@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -71,6 +72,7 @@ import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.BiometricAuth
 import com.pulseweaver.heartbeat.platform.NetworkMonitor
 import com.pulseweaver.heartbeat.platform.UrlOpener
+import com.pulseweaver.heartbeat.platform.currentEpochMs
 import com.pulseweaver.heartbeat.platform.currentTimeForDisplay
 import com.pulseweaver.heartbeat.platform.platformHasBackgroundLimit
 import com.pulseweaver.heartbeat.service.HeartbeatClient
@@ -107,11 +109,15 @@ fun HeartbeatScreen(
     var lastResult by remember { mutableStateOf<HeartbeatResult?>(null) }
     var lastResultTime by remember { mutableStateOf("") }
     var lastResultMark by remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
+    var lastResultEpochMs by remember { mutableStateOf(0L) }
+    var elapsedDisplay by remember { mutableStateOf("") }
     var nextInDisplay by remember { mutableStateOf("") }
 
     var isApiKeyVisible by remember { mutableStateOf(false) }
     var isSending by remember { mutableStateOf(false) }
     var showSaved by remember { mutableStateOf(false) }
+    // Expanded by default for first-run; collapsed once the config is valid.
+    var connectionExpanded by remember { mutableStateOf(true) }
 
     val coroutineScope = rememberCoroutineScope()
     val client = remember { HeartbeatClient() }
@@ -123,10 +129,12 @@ fun HeartbeatScreen(
         if (isSending) return
         isSending = true
         val result = client.send(config, trigger)
+        val epochMs = currentEpochMs()
         lastResult = result
         lastResultTime = currentTimeForDisplay()
         lastResultMark = TimeSource.Monotonic.markNow()
-        resultStore.save(result, lastResultTime)
+        lastResultEpochMs = epochMs
+        resultStore.save(result, lastResultTime, epochMs)
         onLastResultChange(result)
         isSending = false
     }
@@ -140,6 +148,10 @@ fun HeartbeatScreen(
         if (savedState != null) {
             lastResult = savedState.result
             lastResultTime = savedState.time
+            lastResultEpochMs = savedState.epochMs
+        }
+        if (HeartbeatUtils.isConfigValid(loaded.serverUrl, loaded.apiKey)) {
+            connectionExpanded = false
         }
         isLoaded = true
         if (config.enabled) {
@@ -173,6 +185,15 @@ fun HeartbeatScreen(
             nextInDisplay = if (remaining > 0) formatDuration(remaining) else "now"
             if (remaining <= 0) break
             delay(1_000)
+        }
+    }
+
+    // Elapsed-since-last-heartbeat ticker — updates every 30s, drives "Xm ago" label
+    LaunchedEffect(lastResultEpochMs) {
+        if (lastResultEpochMs == 0L) { elapsedDisplay = ""; return@LaunchedEffect }
+        while (true) {
+            elapsedDisplay = HeartbeatUtils.formatElapsed(lastResultEpochMs, currentEpochMs())
+            delay(30_000)
         }
     }
 
@@ -239,61 +260,26 @@ fun HeartbeatScreen(
                 enabled = config.enabled,
                 lastResult = lastResult,
                 lastResultTime = lastResultTime,
+                elapsedDisplay = elapsedDisplay,
                 nextInDisplay = nextInDisplay,
                 isSending = isSending,
                 isConfigValid = isConfigValid,
                 onTap = { coroutineScope.launch { sendHeartbeat("manual") } },
             )
 
-            // ── Connection card ────────────────────────────────────────────
-            Card(
-                modifier = Modifier.fillMaxWidth().testTag(TestTags.CONNECTION_CARD),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("Connection", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                        AnimatedVisibility(
-                            visible = showSaved,
-                            enter = fadeIn(tween(200)),
-                            exit = fadeOut(tween(600)),
-                        ) {
-                            Text(
-                                "Saved ✓",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                            )
-                        }
-                    }
-                    OutlinedTextField(
-                        value = config.serverUrl,
-                        onValueChange = { config = config.copy(serverUrl = it) },
-                        label = { Text("Server URL") },
-                        placeholder = { Text("https://server.example.com") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth().testTag(TestTags.SERVER_URL_FIELD),
-                    )
-                    OutlinedTextField(
-                        value = config.apiKey,
-                        onValueChange = { config = config.copy(apiKey = it) },
-                        label = { Text("API Key") },
-                        singleLine = true,
-                        visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            TextButton(onClick = { isApiKeyVisible = !isApiKeyVisible }) {
-                                Text(if (isApiKeyVisible) "Hide" else "Show")
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().testTag(TestTags.API_KEY_FIELD),
-                    )
-                }
+            // ── Connection card — hidden until config is loaded to avoid flash ──
+            if (isLoaded) {
+                ConnectionCard(
+                    config = config,
+                    expanded = connectionExpanded,
+                    isConfigValid = isConfigValid,
+                    showSaved = showSaved,
+                    isApiKeyVisible = isApiKeyVisible,
+                    onExpandToggle = { connectionExpanded = !connectionExpanded },
+                    onServerUrlChange = { config = config.copy(serverUrl = it) },
+                    onApiKeyChange = { config = config.copy(apiKey = it) },
+                    onApiKeyVisibilityToggle = { isApiKeyVisible = !isApiKeyVisible },
+                )
             }
 
             // ── Schedule card ──────────────────────────────────────────────
@@ -361,6 +347,7 @@ fun HeartbeatScreen(
                         modifier = Modifier.padding(16.dp),
                         lastResult = lastResult!!,
                         lastResultTime = lastResultTime,
+                        elapsedDisplay = elapsedDisplay,
                         nextInDisplay = nextInDisplay,
                     )
                 }
@@ -465,6 +452,7 @@ private fun StatusHero(
     enabled: Boolean,
     lastResult: HeartbeatResult?,
     lastResultTime: String,
+    elapsedDisplay: String,
     nextInDisplay: String,
     isSending: Boolean = false,
     isConfigValid: Boolean = false,
@@ -567,9 +555,10 @@ private fun StatusHero(
         }
 
         if (lastResultTime.isNotEmpty()) {
+            val elapsedSuffix = if (elapsedDisplay.isNotEmpty()) " ($elapsedDisplay)" else ""
             Text(
-                text = if (nextInDisplay.isNotEmpty()) "Next in $nextInDisplay · Last $lastResultTime"
-                       else "Last sent $lastResultTime",
+                text = if (nextInDisplay.isNotEmpty()) "Next in $nextInDisplay · Last $lastResultTime$elapsedSuffix"
+                       else "Last sent $lastResultTime$elapsedSuffix",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -582,6 +571,7 @@ private fun LastResultRow(
     modifier: Modifier = Modifier,
     lastResult: HeartbeatResult,
     lastResultTime: String,
+    elapsedDisplay: String,
     nextInDisplay: String,
 ) {
     val resultColor = when {
@@ -599,8 +589,9 @@ private fun LastResultRow(
             color = resultColor,
         )
         if (lastResultTime.isNotEmpty()) {
+            val elapsedSuffix = if (elapsedDisplay.isNotEmpty()) " ($elapsedDisplay)" else ""
             Text(
-                text = "at $lastResultTime  ·  trigger: ${lastResult.trigger}",
+                text = "at $lastResultTime$elapsedSuffix  ·  trigger: ${lastResult.trigger}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -612,3 +603,91 @@ private fun LastResultRow(
 }
 
 private fun formatDuration(totalSeconds: Long): String = HeartbeatUtils.formatDuration(totalSeconds)
+
+@Composable
+private fun ConnectionCard(
+    config: HeartbeatConfig,
+    expanded: Boolean,
+    isConfigValid: Boolean,
+    showSaved: Boolean,
+    isApiKeyVisible: Boolean,
+    onExpandToggle: () -> Unit,
+    onServerUrlChange: (String) -> Unit,
+    onApiKeyChange: (String) -> Unit,
+    onApiKeyVisibilityToggle: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.CONNECTION_CARD),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    ) {
+        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+            // Header row — always visible, tappable when configured
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isConfigValid) Modifier.clickable { onExpandToggle() } else Modifier),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Connection", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AnimatedVisibility(visible = showSaved, enter = fadeIn(tween(200)), exit = fadeOut(tween(600))) {
+                        Text("Saved ✓", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (isConfigValid) {
+                        Text(
+                            text = if (expanded) "▲" else "▼",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+
+            // Collapsed summary — URL only, no editing
+            if (isConfigValid && !expanded) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = config.serverUrl,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            // Expanded fields
+            AnimatedVisibility(visible = expanded) {
+                Column(
+                    modifier = Modifier.padding(top = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    OutlinedTextField(
+                        value = config.serverUrl,
+                        onValueChange = onServerUrlChange,
+                        label = { Text("Server URL") },
+                        placeholder = { Text("https://server.example.com") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth().testTag(TestTags.SERVER_URL_FIELD),
+                    )
+                    OutlinedTextField(
+                        value = config.apiKey,
+                        onValueChange = onApiKeyChange,
+                        label = { Text("API Key") },
+                        singleLine = true,
+                        visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            TextButton(onClick = onApiKeyVisibilityToggle) {
+                                Text(if (isApiKeyVisible) "Hide" else "Show")
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().testTag(TestTags.API_KEY_FIELD),
+                    )
+                }
+            }
+        }
+    }
+}

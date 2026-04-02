@@ -10,5 +10,7 @@ actual fun currentTimeForDisplay(): String {
     return "%02d:%02d:%02d".format(h, m, s)
 }
 
+actual fun currentEpochMs(): Long = System.currentTimeMillis()
+
 actual val platformHasBackgroundLimit: Boolean = true
 
