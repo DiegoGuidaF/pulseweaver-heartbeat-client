@@ -4,16 +4,25 @@ on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: write
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 env:
   JAVA_VERSION: '21'
 
 jobs:
+  test:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/test.yml
+
   build-android:
     name: Android APK
+    needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
@@ -50,7 +59,10 @@ jobs:
 
   build-linux:
     name: Linux packages
+    needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
@@ -80,7 +92,10 @@ jobs:
 
   build-macos:
     name: macOS DMG
+    needs: test
     runs-on: macos-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
@@ -110,7 +125,10 @@ jobs:
 
   build-windows:
     name: Windows MSI
+    needs: test
     runs-on: windows-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
 
@@ -145,6 +163,8 @@ jobs:
     name: Publish Release
     needs: [build-android, build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -163,15 +183,12 @@ jobs:
           args: --latest --strip header
         env:
           OUTPUT: RELEASE_NOTES.md
-          GITHUB_REPO: ${{ github.repository }}
 
       - name: Update CHANGELOG.md
         uses: orhun/git-cliff-action@v4
         with:
           config: cliff.toml
           args: --output CHANGELOG.md
-        env:
-          GITHUB_REPO: ${{ github.repository }}
 
       - name: Commit CHANGELOG.md
         run: |
@@ -179,7 +196,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add CHANGELOG.md
           git diff --staged --quiet || git commit -m "chore(ci): update CHANGELOG.md for ${{ github.ref_name }}"
-          git push origin HEAD:main
+          git push origin HEAD:${{ github.event.repository.default_branch }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
