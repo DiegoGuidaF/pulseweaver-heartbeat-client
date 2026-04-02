@@ -66,6 +66,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
+import com.pulseweaver.heartbeat.config.ResultStore
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.BiometricAuth
 import com.pulseweaver.heartbeat.platform.NetworkMonitor
@@ -115,6 +116,7 @@ fun HeartbeatScreen(
     val coroutineScope = rememberCoroutineScope()
     val client = remember { HeartbeatClient() }
     val configStore = remember { ConfigStore() }
+    val resultStore = remember { ResultStore() }
     val networkMonitor = remember { NetworkMonitor() }
 
     suspend fun sendHeartbeat(trigger: String) {
@@ -124,15 +126,21 @@ fun HeartbeatScreen(
         lastResult = result
         lastResultTime = currentTimeForDisplay()
         lastResultMark = TimeSource.Monotonic.markNow()
+        resultStore.save(result, lastResultTime)
         onLastResultChange(result)
         isSending = false
     }
 
-    // Load config on startup
+    // Load config and last heartbeat result on startup
     LaunchedEffect(Unit) {
         val loaded = configStore.load()
         lastSavedConfig = loaded  // mark as already-on-disk so auto-save skips it
         config = loaded
+        val savedState = resultStore.load()
+        if (savedState != null) {
+            lastResult = savedState.result
+            lastResultTime = savedState.time
+        }
         isLoaded = true
         if (config.enabled) {
             networkMonitor.startMonitoring { coroutineScope.launch { sendHeartbeat("network_change") } }
