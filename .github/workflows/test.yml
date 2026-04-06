@@ -15,7 +15,7 @@ jobs:
           distribution: zulu
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Run tests
         run: ./gradlew :shared:jvmTest --stacktrace
