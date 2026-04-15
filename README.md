@@ -2,99 +2,47 @@
 
 Keep your devices authorized on your [PulseWeaver](https://github.com/DiegoGuidaF/PulseWeaver) server — automatically.
 
-PulseWeaver is a self-hosted, IP-based dynamic firewall. It sits as an authorization middleware in front of your reverse
-proxy (e.g. Caddy) and decides whether to allow or deny requests based on the caller's IP. For an IP to be allowed, a
-device must **send periodic heartbeats** to prove it's still active.
+PulseWeaver is a self-hosted, IP-based dynamic firewall. For an IP to stay allowed, a device must send periodic heartbeats to prove it's still active. This repository provides three ways to do that.
 
-This app does exactly that. Install it on a phone, laptop, or desktop and it keeps your IP registered in the
-background — no browser tabs, no Tasker hacks, no manual steps. There's also a docker image which simply runs the 
-heartbeat each X time, mostly useful for setups already running docker that want a simple approach.
+## Which setup?
 
-## Platforms
+|                  | [📱 Kotlin app](#-kotlin-app)                | [🐳 Docker](#-docker)                      | [⚙️ DIY — curl](#️-diy--curl)    |
+|------------------|----------------------------------------------|--------------------------------------------|-----------------------------------|
+| **Best for**     | Phones and desktops that need a GUI          | Servers/NAS already running Docker         | Any Linux or macOS, zero deps     |
+| **Platforms**    | Android, Linux, Windows, macOS               | Any Docker host                            | Linux, macOS                      |
+| **Scheduling**   | OS-native (WorkManager, JVM timer)           | Container restart policy                   | systemd timer / launchd           |
+| **Network-aware**| Yes — reconnects immediately on link change  | No                                         | No                                |
+| **Requirements** | None (self-contained installer)              | Docker                                     | curl                              |
 
-| Platform | Status     | Background scheduling           |
-|----------|------------|---------------------------------|
-| Android  | ✅ Ready    | WorkManager (survives doze)     |
-| Linux    | ✅ Ready    | JVM timer + system tray         |
-| Windows  | ✅ Ready    | JVM timer + system tray         |
-| macOS    | ✅ Ready    | JVM timer + system tray         |
-| iOS      | 🚧 Planned | BGAppRefreshTask                |
-| Docker   | ✅ Ready    | Bash while true loop with sleep |
+---
 
-Single codebase — built with Kotlin Multiplatform and Compose Multiplatform.
+## 🔑 Prerequisites
 
-> **NOTE**: You can avoid this app/docker and do your own setup — a simple `curl` + systemd timer (Linux) or launchd agent (
-> macOS) works with zero dependencies. See
-> the [Lightweight Heartbeat Clients](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Lightweight-Heartbeat-Clients.md)
-> guide.
+All three setups need an API key. In the PulseWeaver dashboard, create a **device key** (starts with `wdk_...`). Each device needs its own key.
 
-## Features
+---
 
-### Application
-- **Background heartbeats** — configurable interval, runs without user interaction
-- **Network-aware** — detects connectivity changes and sends a heartbeat immediately when back online
-- **Biometric lock** (Android) — optionally require fingerprint/face to view or change settings, with a 60-second grace
-  period
-- **System tray** (Desktop) — lives in the tray with a state-aware icon; no window needed after setup
-- **Light / Dark / Auto theme** — follows your system preference or pick manually
-- **Minimal permissions** — no accounts, no telemetry, no internet access beyond your own server
-- 
-### Docker image
-- **Background heartbeats** — configurable interval, runs without user interaction
-- **Minimal permissions** — no accounts, no telemetry, no internet access beyond your own server
+## 📱 Kotlin app
 
-## Screenshots
+The full-featured client for phones and desktops. Runs in the background, handles network changes, lives in the system tray on desktop.
 
-<!-- Replace these with actual screenshots -->
+Download the latest release from [GitHub Releases](https://github.com/DiegoGuidaF/pulseweaver-heartbeat-client/releases), install it, and fill in your server URL, API key, and interval. Flip the switch to start.
 
-| Android                                            | Desktop                                            |
-|----------------------------------------------------|----------------------------------------------------|
-| ![Android screenshot](docs/screenshot-android.png) | ![Desktop screenshot](docs/screenshot-desktop.png) |
+→ [Full documentation — features, screenshots, building from source](docs/app.md)
 
-## Getting started
+---
 
-### 1. Generate an API key
+## 🐳 Docker
 
-In the PulseWeaver dashboard, create a **device key** (starts with `wdk_...`). Each device needs its own key.
-
-### 2. Install the app
-
-Download the latest release for your platform
-from [GitHub Releases](https://github.com/DiegoGuidaF/pulseweaver-heartbeat-client/releases):
-
-| Platform | Artifact                   |
-|----------|----------------------------|
-| Android  | `.apk`                     |
-| Linux    | `.deb` / `.rpm` / AppImage |
-| Windows  | `.msi`                     |
-| macOS    | `.dmg`                     |
-
-### 3. Configure
-
-Open the app and fill in:
-
-- **Server URL** — your PulseWeaver instance (e.g. `https://pw.example.com`)
-- **API Key** — the `wdk_...` key from step 1
-- **Interval** — how often to send heartbeats (default: 60 seconds)
-
-Flip the switch to start. On desktop the app moves to the system tray.
-
-> **Tip for mobile / dynamic IP devices:** Enable the **address lease** on the PulseWeaver server for that device and
-> set the TTL slightly above the heartbeat interval (e.g. 20 min TTL for a 15 min interval). This way, if a heartbeat is
-> delayed by a network switch or doze cycle, the IP doesn't expire prematurely.
-
-### Docker
-
-Ideal for servers, NAS devices, or any machine where you want a lightweight headless heartbeat with no JVM dependency.
+Lightweight option for servers or NAS devices already running Docker. No JVM, no GUI — just a container that curls your server on a configurable interval.
 
 ```bash
-# 1. Copy docker/docker-compose.yml to your host
-# 2. Fill in the environment variables
-# 3. Start
+# 1. Copy docker/docker-compose.yml to your host and fill in the env vars
+# 2. Start
 docker compose up -d
 ```
 
-Or with `docker run` directly:
+Or with `docker run`:
 
 ```bash
 docker run -d \
@@ -112,16 +60,31 @@ docker run -d \
 | `HEARTBEAT_INTERVAL_SECONDS` | Yes      | How often to send a heartbeat, in seconds — must be a positive integer |
 | `HEARTBEAT_ENDPOINT`         | No       | Heartbeat path, defaults to `/api/v1/heartbeat`                        |
 
-The three required variables must be set — the container exits with an error if any are missing or invalid.
+The container exits with an error on startup if any required variable is missing or invalid.
 
-## API
+---
 
-The client calls a single endpoint. No server-side changes are needed.
+## ⚙️ DIY — curl
+
+No dependencies beyond `curl`. Useful for headless Linux or macOS machines where you want full control.
+
+```bash
+curl -s -X POST https://pw.example.com/api/v1/heartbeat \
+     -H "X-API-Key: wdk_..."
+```
+
+→ [Full guide — systemd timer, launchd agent, and more](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Lightweight-Heartbeat-Clients.md)
+
+---
+
+## 🔌 API reference
+
+All three setups call the same endpoint. No server-side changes are needed beyond generating a device key.
 
 ```
 POST {server_url}/api/v1/heartbeat
 Header: X-API-Key: wdk_...
-Body:   (empty — server reads IP from the request)
+Body:   (empty — server reads the caller's IP)
 
 200 — IP updated
 201 — New IP registered
@@ -130,41 +93,9 @@ Body:   (empty — server reads IP from the request)
 429 — Rate limited
 ```
 
-## Building from source
-
-Requires **JDK 17+** and the Android SDK (for Android builds).
-
-```bash
-# Run tests
-./gradlew shared:jvmTest
-
-# Desktop app (current OS)
-./gradlew shared:run
-
-# Android APK
-./gradlew androidApp:assembleRelease
-
-# Native desktop installers
-./gradlew shared:packageDmg          # macOS
-./gradlew shared:packageMsi          # Windows
-./gradlew shared:packageDeb          # Linux .deb
-./gradlew shared:packageRpm          # Linux .rpm
-```
-
-## Tech stack
-
-| Layer    | Technology                                                             |
-|----------|------------------------------------------------------------------------|
-| Language | Kotlin 2.3.20                                                          |
-| UI       | Compose Multiplatform 1.10.3                                           |
-| HTTP     | Ktor 3.4.2                                                             |
-| Build    | Gradle with version catalog, AGP 9.1.0                                 |
-| Tests    | kotlin-test, kotlinx-coroutines-test, Ktor MockEngine, compose-ui-test |
-
 ## Contributing
 
-Contributions are welcome. The project follows a spec-driven workflow — feature specs live in
-the [planning workspace](https://github.com/DiegoGuidaF/PulseWeaver) and are written before implementation starts.
+Contributions are welcome. The project follows a spec-driven workflow — feature specs live in the [planning workspace](https://github.com/DiegoGuidaF/PulseWeaver) and are written before implementation starts.
 
 ## License
 
