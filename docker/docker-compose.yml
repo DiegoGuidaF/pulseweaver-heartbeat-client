@@ -1,0 +1,13 @@
+services:
+  heartbeat:
+    image: ghcr.io/diegoguidaf/pulseweaver-heartbeat-client:latest
+    restart: unless-stopped
+    environment:
+      # Your PulseWeaver server URL, e.g. https://pw.example.com
+      HEARTBEAT_URL: ""
+      # Device API key from the PulseWeaver dashboard (starts with wdk_...)
+      HEARTBEAT_API_KEY: ""
+      # How often to send a heartbeat, in seconds (default: 60)
+      HEARTBEAT_INTERVAL_SECONDS: "60"
+      # Optional: override the heartbeat path (default: /api/v1/heartbeat)
+      # HEARTBEAT_ENDPOINT: /api/v1/heartbeat
