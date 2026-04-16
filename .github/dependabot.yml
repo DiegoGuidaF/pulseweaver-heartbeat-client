@@ -6,7 +6,9 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      timezone: "Europe/Rome"
     open-pull-requests-limit: 5
+    assignees: ["DiegoGuidaF"]
     labels: ["dependencies", "gradle"]
     groups:
       gradle-minor-patch:
@@ -18,7 +20,9 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+      timezone: "Europe/Rome"
     open-pull-requests-limit: 5
+    assignees: ["DiegoGuidaF"]
     labels: ["dependencies", "ci"]
     groups:
       github-actions:
