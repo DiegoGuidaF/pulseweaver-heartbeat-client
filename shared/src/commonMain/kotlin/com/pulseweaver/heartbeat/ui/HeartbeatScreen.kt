@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -97,6 +98,7 @@ fun HeartbeatScreen(
     onLastResultChange: (HeartbeatResult?) -> Unit = {},
     sendNowTrigger: Int = 0,
     onThemeModeChange: (ThemeMode) -> Unit = {},
+    onEnterSetupCode: () -> Unit = {},
 ) {
     val configState = remember { mutableStateOf(HeartbeatConfig()) }
     var config by configState
@@ -116,6 +118,7 @@ fun HeartbeatScreen(
     var isApiKeyVisible by remember { mutableStateOf(false) }
     var isSending by remember { mutableStateOf(false) }
     var showSaved by remember { mutableStateOf(false) }
+    var showReRegisterDialog by remember { mutableStateOf(false) }
     // Expanded by default for first-run; collapsed once the config is valid.
     var connectionExpanded by remember { mutableStateOf(true) }
 
@@ -275,10 +278,41 @@ fun HeartbeatScreen(
                     isConfigValid = isConfigValid,
                     showSaved = showSaved,
                     isApiKeyVisible = isApiKeyVisible,
+                    locked = config.settingsLocked,
                     onExpandToggle = { connectionExpanded = !connectionExpanded },
                     onServerUrlChange = { config = config.copy(serverUrl = it) },
                     onApiKeyChange = { config = config.copy(apiKey = it) },
                     onApiKeyVisibilityToggle = { isApiKeyVisible = !isApiKeyVisible },
+                    onEnterSetupCode = { showReRegisterDialog = true },
+                )
+            }
+
+            // ── Re-register confirmation dialog ───────────────────────────
+            if (showReRegisterDialog) {
+                AlertDialog(
+                    onDismissRequest = { showReRegisterDialog = false },
+                    title = { Text("Start over?") },
+                    text = {
+                        Text(
+                            "All current settings will be erased. You will need a registration code from your administrator to set up the device again.",
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                showReRegisterDialog = false
+                                coroutineScope.launch {
+                                    scheduler.cancelHeartbeat()
+                                    networkMonitor.stopMonitoring()
+                                    configStore.save(HeartbeatConfig())
+                                    onEnterSetupCode()
+                                }
+                            },
+                        ) { Text("Continue") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showReRegisterDialog = false }) { Text("Cancel") }
+                    },
                 )
             }
 
@@ -301,6 +335,7 @@ fun HeartbeatScreen(
                                     selected = config.intervalSeconds == seconds,
                                     onClick = { config = config.copy(intervalSeconds = seconds) },
                                     label = { Text(INTERVAL_LABELS[i]) },
+                                    enabled = !config.settingsLocked,
                                 )
                             }
                         }
@@ -319,7 +354,7 @@ fun HeartbeatScreen(
                         }
                         Switch(
                             checked = config.enabled,
-                            enabled = isConfigValid,
+                            enabled = isConfigValid && !config.settingsLocked,
                             onCheckedChange = { enabled ->
                                 config = config.copy(enabled = enabled)
                                 if (enabled) {
@@ -393,6 +428,7 @@ fun HeartbeatScreen(
                             Text("Require biometric to open", style = MaterialTheme.typography.bodyMedium)
                             Switch(
                                 checked = config.biometricEnabled,
+                                enabled = !config.settingsLocked,
                                 onCheckedChange = { config = config.copy(biometricEnabled = it) },
                             )
                         }
@@ -611,10 +647,12 @@ private fun ConnectionCard(
     isConfigValid: Boolean,
     showSaved: Boolean,
     isApiKeyVisible: Boolean,
+    locked: Boolean,
     onExpandToggle: () -> Unit,
     onServerUrlChange: (String) -> Unit,
     onApiKeyChange: (String) -> Unit,
     onApiKeyVisibilityToggle: () -> Unit,
+    onEnterSetupCode: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth().testTag(TestTags.CONNECTION_CARD),
@@ -637,6 +675,12 @@ private fun ConnectionCard(
                     AnimatedVisibility(visible = showSaved, enter = fadeIn(tween(200)), exit = fadeOut(tween(600))) {
                         Text("Saved ✓", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                     }
+                    Text(
+                        text = "Enter a setup code",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable(onClick = onEnterSetupCode),
+                    )
                     if (isConfigValid) {
                         Text(
                             text = if (expanded) "▲" else "▼",
@@ -671,21 +715,24 @@ private fun ConnectionCard(
                         label = { Text("Server URL") },
                         placeholder = { Text("https://server.example.com") },
                         singleLine = true,
+                        enabled = !locked,
                         modifier = Modifier.fillMaxWidth().testTag(TestTags.SERVER_URL_FIELD),
                     )
-                    OutlinedTextField(
-                        value = config.apiKey,
-                        onValueChange = onApiKeyChange,
-                        label = { Text("API Key") },
-                        singleLine = true,
-                        visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                        trailingIcon = {
-                            TextButton(onClick = onApiKeyVisibilityToggle) {
-                                Text(if (isApiKeyVisible) "Hide" else "Show")
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth().testTag(TestTags.API_KEY_FIELD),
-                    )
+                    if (!locked) {
+                        OutlinedTextField(
+                            value = config.apiKey,
+                            onValueChange = onApiKeyChange,
+                            label = { Text("API Key") },
+                            singleLine = true,
+                            visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            trailingIcon = {
+                                TextButton(onClick = onApiKeyVisibilityToggle) {
+                                    Text(if (isApiKeyVisible) "Hide" else "Show")
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth().testTag(TestTags.API_KEY_FIELD),
+                        )
+                    }
                 }
             }
         }

@@ -19,4 +19,11 @@ object TestTags {
     const val THEME_CHIP_AUTO = "theme_chip_auto"
     const val THEME_CHIP_LIGHT = "theme_chip_light"
     const val THEME_CHIP_DARK = "theme_chip_dark"
+
+    // SetupScreen
+    const val SETUP_SCREEN = "setup_screen"
+    const val REGISTRATION_CODE_FIELD = "registration_code_field"
+    const val ACTIVATE_BUTTON = "activate_button"
+    const val MANUAL_SETUP_LINK = "manual_setup_link"
+    const val SETUP_ERROR_TEXT = "setup_error_text"
 }

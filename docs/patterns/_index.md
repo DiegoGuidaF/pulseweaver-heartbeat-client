@@ -5,6 +5,9 @@
 
 | Pattern | File | Use when | Avoid when | Refs |
 |---------|------|----------|------------|------|
+| App architecture & screen routing | `app-architecture.md` | Adding a new screen, changing navigation, modifying composable hierarchy | Small changes within an existing card | `App.kt`, `HeartbeatScreen.kt` |
+| Config persistence | `config-persistence.md` | Adding a new config field, changing storage behavior | Reading config (just use `ConfigStore().load()`) | `config/HeartbeatConfig.kt`, `ConfigStore.*.kt` |
 | Expect/actual platform abstraction | `expect-actual.md` | Adding platform-specific behavior (scheduling, biometrics, storage) | Pure business logic that works in commonMain | `platform/BackgroundScheduler.kt`, `config/ConfigStore.kt` |
-| Ktor HTTP client | `ktor-http-client.md` | Making HTTP requests, modifying heartbeat logic | UI code or platform scheduling | `service/HeartbeatClient.kt` |
+| Ktor HTTP client | `ktor-http-client.md` | Making HTTP requests, adding new API endpoints | UI code or platform scheduling | `service/HeartbeatClient.kt` |
 | Testing | `testing.md` | Writing unit tests, HTTP tests, or UI tests | — | `commonTest/`, `jvmTest/` |
+| UI theming & component style | `ui-theming.md` | Creating new UI composables, cards, or styled elements | Backend/service code | `App.kt`, `HeartbeatScreen.kt` |

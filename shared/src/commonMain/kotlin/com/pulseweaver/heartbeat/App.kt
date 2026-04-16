@@ -18,6 +18,7 @@ import com.pulseweaver.heartbeat.service.HeartbeatResult
 import com.pulseweaver.heartbeat.service.HeartbeatUtils
 import com.pulseweaver.heartbeat.ui.AuthGate
 import com.pulseweaver.heartbeat.ui.HeartbeatScreen
+import com.pulseweaver.heartbeat.ui.SetupScreen
 
 // Navy depth Theme  ────────────────────────────────────────
 // Dark: deep navy background + slightly lighter card surfaces (rich, not flat).
@@ -47,6 +48,12 @@ private val IndigoDark = darkColorScheme(
     onSurfaceVariant = Color(0xFFADB5D4),
 )
 
+private sealed interface ScreenState {
+    data object Loading : ScreenState
+    data object Setup : ScreenState
+    data object Main : ScreenState
+}
+
 @Composable
 fun App(
     scheduler: BackgroundScheduler,
@@ -54,22 +61,37 @@ fun App(
     sendNowTrigger: Int = 0,
 ) {
     var themeMode by remember { mutableStateOf(ThemeMode.AUTO) }
+    var screenState by remember { mutableStateOf<ScreenState>(ScreenState.Loading) }
 
     LaunchedEffect(Unit) {
-        themeMode = ConfigStore().load().themeMode
+        val config = ConfigStore().load()
+        themeMode = config.themeMode
+        screenState = if (HeartbeatUtils.isConfigValid(config.serverUrl, config.apiKey)) {
+            ScreenState.Main
+        } else {
+            ScreenState.Setup
+        }
     }
 
     val systemIsDark = isSystemInDarkTheme()
     val useDark = HeartbeatUtils.shouldUseDarkTheme(themeMode, systemIsDark)
 
     MaterialTheme(colorScheme = if (useDark) IndigoDark else IndigoLight) {
-        AuthGate {
-            HeartbeatScreen(
-                scheduler = scheduler,
-                onLastResultChange = onLastResultChange,
-                sendNowTrigger = sendNowTrigger,
-                onThemeModeChange = { themeMode = it },
+        when (screenState) {
+            ScreenState.Loading -> { /* blank while config loads — avoids setup/main flash */ }
+            ScreenState.Setup -> SetupScreen(
+                onProvisioningComplete = { screenState = ScreenState.Main },
+                onManualSetup = { screenState = ScreenState.Main },
             )
+            ScreenState.Main -> AuthGate {
+                HeartbeatScreen(
+                    scheduler = scheduler,
+                    onLastResultChange = onLastResultChange,
+                    sendNowTrigger = sendNowTrigger,
+                    onThemeModeChange = { themeMode = it },
+                    onEnterSetupCode = { screenState = ScreenState.Setup },
+                )
+            }
         }
     }
 }

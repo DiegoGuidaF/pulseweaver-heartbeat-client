@@ -16,9 +16,15 @@ dependencies {
 
 val appVersion = project.findProperty("appVersion")?.toString() ?: "1.0.0"
 val versionParts = appVersion.split(".")
-val computedVersionCode = (versionParts.getOrNull(0)?.toIntOrNull() ?: 1) * 10000 +
-    (versionParts.getOrNull(1)?.toIntOrNull() ?: 0) * 100 +
-    (versionParts.getOrNull(2)?.toIntOrNull() ?: 0)
+// CI always passes -PappVersion; local dev builds don't. Use Int.MAX_VALUE for dev
+// so a debug APK can always be installed on a device that has a release version.
+val computedVersionCode = if (project.hasProperty("appVersion")) {
+    (versionParts.getOrNull(0)?.toIntOrNull() ?: 1) * 10000 +
+        (versionParts.getOrNull(1)?.toIntOrNull() ?: 0) * 100 +
+        (versionParts.getOrNull(2)?.toIntOrNull() ?: 0)
+} else {
+    Int.MAX_VALUE
+}
 
 android {
     namespace = "com.pulseweaver.heartbeat"

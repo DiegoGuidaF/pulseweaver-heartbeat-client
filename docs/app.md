@@ -40,9 +40,25 @@ Download the latest release for your platform from [GitHub Releases](https://git
 | Windows  | `.msi`                     |
 | macOS    | `.dmg`                     |
 
-## Configuring
+## Device provisioning
 
-Open the app and fill in:
+The recommended way to set up the app. Your PulseWeaver administrator creates a registration code and shares it with you (QR code or text string).
+
+1. Open the app — on first launch it goes straight to the **Setup screen**.
+2. **Paste** the registration code your administrator sent you.
+3. Tap **Activate**. The app contacts your server, registers the device, and auto-configures everything: server URL, API key, heartbeat interval, and biometric settings.
+4. Done — heartbeats start immediately.
+
+If your administrator enabled **Lock all app settings**, the connection and interval controls are read-only. Appearance settings (theme) remain editable.
+
+To re-provision (e.g. after a server migration), go to **Settings → Set up again**. The app will ask for confirmation before replacing the current configuration.
+
+> For how the server side of provisioning works (creating invites, proxy setup, the registration code format), see the
+> [PulseWeaver server documentation](https://github.com/DiegoGuidaF/PulseWeaver#device-provisioning).
+
+## Manual configuration
+
+If you don't have a registration code, tap **Configure manually** on the setup screen and fill in:
 
 - **Server URL** — your PulseWeaver instance (e.g. `https://pw.example.com`)
 - **API Key** — the `wdk_...` key from the PulseWeaver dashboard

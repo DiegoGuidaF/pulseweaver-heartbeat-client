@@ -15,6 +15,7 @@ actual class ConfigStore actual constructor() {
         biometricEnabled = false, // not applicable on desktop
         themeMode = runCatching { ThemeMode.valueOf(prefs.get("themeMode", "AUTO")) }
             .getOrDefault(ThemeMode.AUTO),
+        settingsLocked = prefs.getBoolean("settingsLocked", false),
     )
 
     actual suspend fun save(config: HeartbeatConfig) {
@@ -23,6 +24,7 @@ actual class ConfigStore actual constructor() {
         prefs.putInt("intervalSeconds", config.intervalSeconds)
         prefs.putBoolean("enabled", config.enabled)
         prefs.put("themeMode", config.themeMode.name)
+        prefs.putBoolean("settingsLocked", config.settingsLocked)
         prefs.flush()
     }
 }

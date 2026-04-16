@@ -9,4 +9,5 @@ data class HeartbeatConfig(
     val enabled: Boolean = false,
     val biometricEnabled: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.AUTO,
+    val settingsLocked: Boolean = false,
 )

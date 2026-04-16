@@ -18,7 +18,9 @@ PulseWeaver is a self-hosted, IP-based dynamic firewall. For an IP to stay allow
 
 ## 🔑 Prerequisites
 
-All three setups need an API key. In the PulseWeaver dashboard, create a **device key** (starts with `wdk_...`). Each device needs its own key.
+**Recommended — Device provisioning:** Your PulseWeaver admin creates a registration code (Devices → Provisioning) and shares it with you. Paste it in the Kotlin app — the device and API key are created automatically. See [app docs → Device provisioning](docs/app.md#device-provisioning).
+
+**Manual setup:** All three setups need an API key. In the PulseWeaver dashboard, create a **device key** (starts with `wdk_...`). Each device needs its own key.
 
 ---
 

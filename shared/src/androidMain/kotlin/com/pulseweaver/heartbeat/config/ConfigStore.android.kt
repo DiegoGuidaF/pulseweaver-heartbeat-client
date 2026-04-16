@@ -17,9 +17,7 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(
 
 // Security note: The API key is stored in DataStore (app-private internal storage).
 // On Android 10+ this is protected by OS-level file-based encryption. On older devices
-// (API 24–28) it is protected by the app sandbox. EncryptedSharedPreferences was
-// considered but officially deprecated by Google in July 2025 with no replacement.
-// For a personal heartbeat token this threat model is adequate.
+// (API 24–28) it is protected by the app sandbox.
 actual class ConfigStore actual constructor() {
 
     private val ds get() = ApplicationContextHolder.context.dataStore
@@ -35,6 +33,7 @@ actual class ConfigStore actual constructor() {
             themeMode = prefs[Keys.THEME_MODE]
                 ?.let { runCatching { ThemeMode.valueOf(it) }.getOrDefault(ThemeMode.AUTO) }
                 ?: ThemeMode.AUTO,
+            settingsLocked = prefs[Keys.SETTINGS_LOCKED] ?: false,
         )
     }
 
@@ -46,6 +45,7 @@ actual class ConfigStore actual constructor() {
             prefs[Keys.ENABLED] = config.enabled
             prefs[Keys.BIOMETRIC_ENABLED] = config.biometricEnabled
             prefs[Keys.THEME_MODE] = config.themeMode.name
+            prefs[Keys.SETTINGS_LOCKED] = config.settingsLocked
         }
     }
 
@@ -56,6 +56,7 @@ actual class ConfigStore actual constructor() {
         val ENABLED = booleanPreferencesKey("enabled")
         val BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val SETTINGS_LOCKED = booleanPreferencesKey("settings_locked")
     }
 }
 
