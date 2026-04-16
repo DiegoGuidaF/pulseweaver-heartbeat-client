@@ -1,26 +1,26 @@
 # PulseWeaver Heartbeat Client
 
-Keep your devices authorized on your [PulseWeaver](https://github.com/DiegoGuidaF/PulseWeaver) server — automatically.
+Keep your devices' current address enabled on your [PulseWeaver](https://github.com/DiegoGuidaF/PulseWeaver) server — automatically.
 
 PulseWeaver is a self-hosted, IP-based dynamic firewall. For an IP to stay allowed, a device must send periodic heartbeats to prove it's still active. This repository provides three ways to do that.
 
 ## Which setup?
 
-|                  | [📱 Kotlin app](#-kotlin-app)                | [🐳 Docker](#-docker)                      | [⚙️ DIY — curl](#️-diy--curl)    |
-|------------------|----------------------------------------------|--------------------------------------------|-----------------------------------|
-| **Best for**     | Phones and desktops that need a GUI          | Servers/NAS already running Docker         | Any Linux or macOS, zero deps     |
-| **Platforms**    | Android, Linux, Windows, macOS               | Any Docker host                            | Linux, macOS                      |
-| **Scheduling**   | OS-native (WorkManager, JVM timer)           | Container restart policy                   | systemd timer / launchd           |
-| **Network-aware**| Yes — reconnects immediately on link change  | No                                         | No                                |
-| **Requirements** | None (self-contained installer)              | Docker                                     | curl                              |
+|                  | [📱 Multiplatform app](#-kotlin-app)                                       | [🐳 Docker](#-docker)                      | [⚙️ DIY — curl](#️-diy--curl)    |
+|------------------|----------------------------------------------------------------------------|--------------------------------------------|-----------------------------------|
+| **Best for**     | Phones and desktops that need a GUI. Providing access for non-techie users. | Servers/NAS already running Docker         | Any Linux or macOS, zero deps     |
+| **Platforms**    | Android, Linux, Windows, macOS                                             | Any Docker host                            | Linux, macOS                      |
+| **Scheduling**   | OS-native (WorkManager, JVM timer)                                         | Container restart policy                   | systemd timer / launchd           |
+| **Network-aware**| Yes — reconnects immediately on link change                                | No                                         | No                                |
+| **Requirements** | None (self-contained installer)                                            | Docker                                     | curl                              |
 
 ---
 
 ## 🔑 Prerequisites
 
-**Recommended — Device provisioning:** Your PulseWeaver admin creates a registration code (Devices → Provisioning) and shares it with you. Paste it in the Kotlin app — the device and API key are created automatically. See [app docs → Device provisioning](docs/app.md#device-provisioning).
-
 **Manual setup:** All three setups need an API key. In the PulseWeaver dashboard, create a **device key** (starts with `wdk_...`). Each device needs its own key.
+
+**Recommended — Device provisioning:** Your PulseWeaver admin creates a registration code (Devices → Provisioning) and shares it with you. Paste it in the Kotlin app — the device and API key are created automatically. See [app docs → Device provisioning](docs/app.md#device-provisioning).
 
 ---
 
