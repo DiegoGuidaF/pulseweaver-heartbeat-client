@@ -2,6 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.1] - 2026-04-17
+
+### Bug Fixes
+
+- *(ci)* CHANGELOG generation happens locally so that release pipeline doesn't run into issues when generating the CHANGELOG and committing it. Pros: Now changelog can be reviewed and editted locally. Tag not has updated changelog already there. Pipeline is simpler ([`0af6bc3`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/0af6bc3188dc28e099af4b502e824c6efa27a281))
+
+## [1.1.0] - 2026-04-16
+
+### Features
+
+- Add docker image as a simple alternative to the application ([`75c4ca6`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/75c4ca6d2e79ccdadf5d41dde454614ca59f7482))
+- Allow registering the application via a registration code shared by the admin ([`29c202a`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/29c202a8871a2f68e8927baf52bc0deae63124f9))
+
+### Miscellaneous
+
+- *(ci)* Update CHANGELOG.md for v1.0.3 ([`2bd6677`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/2bd6677d0a9135b0e1dac155079f97fc3be6145a))
+- Improve documentation and split ita ([`e9d282b`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/e9d282b48e15728910e7407729fccf09be0e063a))
+- Improve documentation by splitting into patterns with an index ([`5c5de91`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/5c5de91fda3b5619e76961a8798f9664e801ac2e))
+- *(deps)* Bump softprops/action-gh-release from 2 to 3 ([`4d485b6`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/4d485b6a208a3123cb4a48f690da339ca1f20c1c))
+- *(deps)* Bump actions/checkout from 5 to 6 ([`ca6d5fc`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/ca6d5fc3fcc44f23a368120b3918ebc457bfda41))
+- *(deps)* Bump gradle/actions from 4 to 6 ([`8661aa0`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/8661aa0fa7018ed253962e27548c259a7d1f2870))
+- *(deps)* Bump actions/download-artifact from 5 to 8 ([`4e41ff9`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/4e41ff9e0b71b04a30f06aaa83d545d57ac20c3f))
+- Improve documentation ([`71a7ca7`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/71a7ca7592fa95d3c981783d1246e70766b21820))
+- *(ci)* Auto-merge dependabot. Pending enable automerge at github repo level, needs public repo. ([`30c4cdb`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/30c4cdb77c64ed3d00ecbb60fcbeb94681d00b74))
+
 ## [1.0.3] - 2026-04-02
 
 ### Bug Fixes
