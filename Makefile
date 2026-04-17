@@ -61,22 +61,25 @@ package-all: package-deb package-dmg package-msi build-android-release ## Build 
 # Release
 # ---------------------------------------------------------------------------
 
-release-patch: ## Tag and push a patch release (x.y.Z+1)
-	@echo "Current: v$(VERSION) → Next: v$(NEXT_PATCH)"
-	@read -p "Confirm? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	git tag -a "v$(NEXT_PATCH)" -m "Release v$(NEXT_PATCH)"
-	git push origin main --tags
+release-patch: ## Changelog → commit → tag → push (patch: x.y.Z+1)
+	@$(MAKE) _release V=$(NEXT_PATCH)
 
-release-minor: ## Tag and push a minor release (x.Y+1.0)
-	@echo "Current: v$(VERSION) → Next: v$(NEXT_MINOR)"
-	@read -p "Confirm? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	git tag -a "v$(NEXT_MINOR)" -m "Release v$(NEXT_MINOR)"
-	git push origin main --tags
+release-minor: ## Changelog → commit → tag → push (minor: x.Y+1.0)
+	@$(MAKE) _release V=$(NEXT_MINOR)
 
-release-major: ## Tag and push a major release (X+1.0.0)
-	@echo "Current: v$(VERSION) → Next: v$(NEXT_MAJOR)"
+release-major: ## Changelog → commit → tag → push (major: X+1.0.0)
+	@$(MAKE) _release V=$(NEXT_MAJOR)
+
+# Internal: run as $(MAKE) _release V=x.y.z — never call directly
+_release:
+	@echo "Current: v$(VERSION) → Next: v$(V)"
 	@read -p "Confirm? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	git tag -a "v$(NEXT_MAJOR)" -m "Release v$(NEXT_MAJOR)"
+	git-cliff --tag "v$(V)" -o CHANGELOG.md
+	@echo "Review and edit the CHANGELOG.md before adding and commiting the new release"
+	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
+	git add CHANGELOG.md
+	git diff --staged --quiet || git commit -m "chore: release v$(V)"
+	git tag -a "v$(V)" -m "Release v$(V)"
 	git push origin main --tags
 
 # ---------------------------------------------------------------------------
