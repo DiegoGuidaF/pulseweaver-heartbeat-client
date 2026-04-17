@@ -35,6 +35,33 @@ jobs:
             docker:
               - 'docker/**'
 
+  create-release:
+    name: Create GitHub Release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --latest --strip header
+        env:
+          OUTPUT: RELEASE_NOTES.md
+
+      - name: Append build notice
+        run: echo -e "\n---\n_Build artifacts are being assembled and will appear below within ~15 minutes._" >> RELEASE_NOTES.md
+
+      - name: Publish release (no artifacts yet)
+        uses: softprops/action-gh-release@v3
+        with:
+          body_path: RELEASE_NOTES.md
+
   build-docker:
     name: Docker image
     needs: [test, check-changes]
@@ -217,11 +244,12 @@ jobs:
           name: windows-msi
           path: PulseWeaver-Heartbeat-*-windows.msi
 
-  release:
-    name: Publish Release
-    needs: [build-android, build-linux, build-macos, build-windows, build-docker]
+  upload-artifacts:
+    name: Upload release artifacts
+    needs: [create-release, build-android, build-linux, build-macos, build-windows, build-docker]
     if: |
       always() &&
+      needs.create-release.result == 'success' &&
       needs.build-android.result == 'success' &&
       needs.build-linux.result == 'success' &&
       needs.build-macos.result == 'success' &&
@@ -231,29 +259,16 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
       - uses: actions/download-artifact@v8
         with:
           merge-multiple: true
 
-      - name: Generate release notes
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: RELEASE_NOTES.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v3
-        with:
-          body_path: RELEASE_NOTES.md
-          files: |
-            PulseWeaver-Heartbeat-*-android.apk
-            PulseWeaver-Heartbeat-*-linux-amd64.deb
-            PulseWeaver-Heartbeat-*-macos.dmg
+      - name: Upload artifacts to release
+        run: |
+          gh release upload "${{ github.ref_name }}" \
+            PulseWeaver-Heartbeat-*-android.apk \
+            PulseWeaver-Heartbeat-*-linux-amd64.deb \
+            PulseWeaver-Heartbeat-*-macos.dmg \
             PulseWeaver-Heartbeat-*-windows.msi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

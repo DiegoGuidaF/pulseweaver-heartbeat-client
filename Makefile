@@ -71,7 +71,7 @@ release-major: ## Changelog → commit → tag → push (major: X+1.0.0)
 	@$(MAKE) _release V=$(NEXT_MAJOR)
 
 # Internal: run as $(MAKE) _release V=x.y.z — never call directly
-_release:
+_release: test
 	@echo "Current: v$(VERSION) → Next: v$(V)"
 	@read -p "Confirm? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
 	git-cliff --tag "v$(V)" -o CHANGELOG.md
