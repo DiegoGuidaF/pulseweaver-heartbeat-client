@@ -1,6 +1,6 @@
 .PHONY: help test build-android build-desktop run clean \
        package-deb package-dmg package-msi package-all \
-       release release-patch release-minor release-major \
+       release release-patch release-minor release-major _release \
        generate-keystore setup-secrets lint \
        install-hooks version
 
@@ -8,6 +8,7 @@ VERSION ?= $(shell (git describe --tags --abbrev=0 2>/dev/null || echo v1.0.0) |
 NEXT_PATCH = $(shell echo $(VERSION) | awk -F. '{printf "%d.%d.%d", $$1, $$2, $$3+1}')
 NEXT_MINOR = $(shell echo $(VERSION) | awk -F. '{printf "%d.%d.0", $$1, $$2+1}')
 NEXT_MAJOR = $(shell echo $(VERSION) | awk -F. '{printf "%d.0.0", $$1+1}')
+SKIP_RELEASE_CHECK ?= 0
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -28,6 +29,8 @@ run: ## Run desktop app
 
 clean: ## Clean build outputs
 	./gradlew clean
+
+check: lint test
 
 # ---------------------------------------------------------------------------
 # Build
@@ -71,11 +74,13 @@ release-major: ## Changelog → commit → tag → push (major: X+1.0.0)
 	@$(MAKE) _release V=$(NEXT_MAJOR)
 
 # Internal: run as $(MAKE) _release V=x.y.z — never call directly
-_release: test
+_release:
+	@git diff --quiet && git diff --staged --quiet || (echo "❌ Dirty working tree — commit or stash changes first" && exit 1)
 	@echo "Current: v$(VERSION) → Next: v$(V)"
 	@read -p "Confirm? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
-	git-cliff --tag "v$(V)" -o CHANGELOG.md
-	@echo "Review and edit the CHANGELOG.md before adding and commiting the new release"
+	@if [ "$(SKIP_RELEASE_CHECK)" != "1" ]; then $(MAKE) check; fi
+	git-cliff --unreleased --tag "v$(V)" --prepend CHANGELOG.md
+	@echo "Review and edit CHANGELOG.md before continuing"
 	@read -p "Continue? [y/N] " confirm && [ "$$confirm" = "y" ] || exit 1
 	git add CHANGELOG.md
 	git diff --staged --quiet || git commit -m "chore: release v$(V)"
@@ -115,6 +120,3 @@ install-hooks: ## Install git hooks (run once after cloning)
 	@ln -sf "$(PWD)/scripts/commit-msg" "$(PWD)/.git/hooks/commit-msg"
 	@chmod +x "$(PWD)/.git/hooks/commit-msg"
 	@echo "✅ Git hooks installed."
-
-version: ## Show current version
-	@echo "$(VERSION)"

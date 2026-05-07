@@ -20,3 +20,5 @@ captures
 # Signing
 *.keystore
 *.jks
+
+/scripts/internal

@@ -46,13 +46,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Generate release notes
-        uses: orhun/git-cliff-action@v4
-        with:
-          config: cliff.toml
-          args: --latest --strip header
-        env:
-          OUTPUT: RELEASE_NOTES.md
+      - name: Extract release notes
+        run: awk '/^## \[/{if(found)exit; found=1} found' CHANGELOG.md > RELEASE_NOTES.md
 
       - name: Append build notice
         run: echo -e "\n---\n_Build artifacts are being assembled and will appear below within ~15 minutes._" >> RELEASE_NOTES.md
