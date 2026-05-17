@@ -24,14 +24,12 @@ class MainActivity : FragmentActivity() {
         setContent {
             App(scheduler = scheduler)
         }
-        if (savedInstanceState == null) {
-            promptDisableBatteryOptimization()
-        }
     }
 
     override fun onResume() {
         super.onResume()
         ActivityHolder.set(this)
+        promptDisableBatteryOptimization()
     }
 
     override fun onPause() {

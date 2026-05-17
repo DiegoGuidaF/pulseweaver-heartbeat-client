@@ -20,6 +20,20 @@ private const val WORK_NAME = "heartbeat"
 // Android enforces a 15-minute minimum for PeriodicWorkRequest
 private const val ANDROID_MIN_INTERVAL_SECONDS = 15 * 60L
 
+// Called from both BackgroundScheduler and BootReceiver to avoid duplicating WorkManager setup.
+internal fun enqueueHeartbeatWork(context: Context, intervalSeconds: Int) {
+    val bgInterval = maxOf(intervalSeconds.toLong(), ANDROID_MIN_INTERVAL_SECONDS)
+    val request = PeriodicWorkRequestBuilder<HeartbeatWorker>(bgInterval, TimeUnit.SECONDS)
+        .setConstraints(
+            Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build()
+        )
+        .build()
+    WorkManager.getInstance(context)
+        .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+}
+
 actual class BackgroundScheduler(private val context: Context) {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -36,17 +50,7 @@ actual class BackgroundScheduler(private val context: Context) {
             }
         }
 
-        // Background WorkManager job: survives app death, respects 15-minute platform minimum.
-        val bgInterval = maxOf(intervalSeconds.toLong(), ANDROID_MIN_INTERVAL_SECONDS)
-        val request = PeriodicWorkRequestBuilder<HeartbeatWorker>(bgInterval, TimeUnit.SECONDS)
-            .setConstraints(
-                Constraints.Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build()
-            )
-            .build()
-        WorkManager.getInstance(context)
-            .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+        enqueueHeartbeatWork(context, intervalSeconds)
     }
 
     actual fun cancelHeartbeat() {
