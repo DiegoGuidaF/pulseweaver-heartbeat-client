@@ -1,3 +1,8 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/wordmark-dark.svg">
+  <img src=".github/assets/wordmark-light.svg" alt="PulseWeaver" height="48">
+</picture>
+
 # PulseWeaver Heartbeat Client
 
 Keep your devices' current address enabled on your [PulseWeaver](https://github.com/DiegoGuidaF/PulseWeaver) server — automatically.
