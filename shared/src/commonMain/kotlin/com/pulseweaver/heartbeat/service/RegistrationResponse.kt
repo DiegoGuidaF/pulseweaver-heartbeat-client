@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * Server response from POST /api/v1/register (200).
+ * Server response from POST /api/v1/device-pair (200).
  * Contains all config fields needed to fully provision the app.
  */
 @Serializable

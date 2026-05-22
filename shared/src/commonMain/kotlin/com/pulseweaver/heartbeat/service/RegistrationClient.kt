@@ -22,7 +22,7 @@ class RegistrationClient(
     suspend fun claim(code: String): RegistrationResult {
         return try {
             val serverUrl = decodeServerURL(code)
-            val url = serverUrl.trimEnd('/') + "/api/v1/register"
+            val url = serverUrl.trimEnd('/') + "/api/v1/device-pair"
             val response = client.post(url) {
                 contentType(ContentType.Application.Json)
                 setBody("""{"code":"$code"}""")
