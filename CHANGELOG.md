@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] - 2026-06-02
+
+### Features
+- Add new branding ([`b153e61`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/b153e61712cf6cdb926b6cb5c3c9e6ed193022aa))
+
+### Miscellaneous
+
+- *(ci)* On release ensure first thing is creating the actual release page, then create artifacts. Only tests must pass, added to the make release command. ([`edf0e6a`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/edf0e6ac53adc46c9bc3a82ee12e86211bd435c2))
+- *(ci)* Release - Improve process and properly relegate changelog to manual review and then pipeline for image generation ([`42dd7d1`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/42dd7d10b6e22d7e767a3db76a58894505e359a1))
+- Improve background process handling by ensuring it is started on boot as well as on app update ([`6b64858`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/6b64858e97f7b3ef20e59dda91461e10934fe217))
+- Update commit msg script ([`912282d`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/912282df5a7554bde14d9b5ddfc828dc74f5c322))
+- Update device pairing endpoint to the new "device-pair" ([`c0ce080`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/c0ce080d4379c1f659768ea8343fbcb87b9881d8))
+
 ## [1.1.1] - 2026-04-17
 
 ### Bug Fixes
