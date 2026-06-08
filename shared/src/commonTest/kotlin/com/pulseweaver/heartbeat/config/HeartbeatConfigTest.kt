@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 
 class HeartbeatConfigTest {
-
     @Test
     fun defaultValues() {
         val config = HeartbeatConfig()
@@ -20,12 +19,13 @@ class HeartbeatConfigTest {
 
     @Test
     fun copyPreservesUnchangedFields() {
-        val original = HeartbeatConfig(
-            serverUrl = "https://example.com",
-            apiKey = "secret",
-            intervalSeconds = 300,
-            enabled = true,
-        )
+        val original =
+            HeartbeatConfig(
+                serverUrl = "https://example.com",
+                apiKey = "secret",
+                intervalSeconds = 300,
+                enabled = true,
+            )
         val updated = original.copy(intervalSeconds = 600)
 
         assertEquals("https://example.com", updated.serverUrl)

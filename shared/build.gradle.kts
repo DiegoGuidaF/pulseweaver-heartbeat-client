@@ -1,3 +1,4 @@
+import org.gradle.declarative.dsl.schema.FqName.Empty.packageName
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -19,7 +20,7 @@ kotlin {
 
     listOf(
         iosArm64(),
-        iosSimulatorArm64()
+        iosSimulatorArm64(),
     ).forEach { iosTarget ->
         iosTarget.binaries.framework {
             baseName = "Shared"
@@ -31,8 +32,14 @@ kotlin {
 
     android {
         namespace = "com.pulseweaver.heartbeat.shared"
-        compileSdk = libs.versions.android.compileSdk.get().toInt()
-        minSdk = libs.versions.android.minSdk.get().toInt()
+        compileSdk =
+            libs.versions.android.compileSdk
+                .get()
+                .toInt()
+        minSdk =
+            libs.versions.android.minSdk
+                .get()
+                .toInt()
 
         compilerOptions {
             jvmTarget = JvmTarget.JVM_11
@@ -99,5 +106,11 @@ compose.desktop {
             packageName = "PulseWeaver Heartbeat"
             packageVersion = appVersion
         }
+    }
+}
+
+ktlint {
+    filter {
+        exclude { it.file.path.contains("build/generated") }
     }
 }

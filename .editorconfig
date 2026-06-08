@@ -2,3 +2,13 @@ root = true
 
 [*]
 ij_kotlin_name_count_to_use_star_import = 2147483647
+
+[*.{kt,kts}]
+# This tells ktlint that functions annotated with @Composable are allowed to start with an uppercase letter
+ktlint_function_naming_ignore_when_annotated_with = Composable
+
+# If you still get the PascalCase file name error for main.kt, you can disable the filename rule for it:
+# (Some versions of ktlint enforce that if a file contains a single top-level declaration,
+# the file name must match the declaration name in PascalCase)
+[**/main.kt]
+ktlint_standard_filename = disabled

@@ -13,4 +13,3 @@ actual fun currentTimeForDisplay(): String {
 actual fun currentEpochMs(): Long = System.currentTimeMillis()
 
 actual val platformHasBackgroundLimit: Boolean = true
-

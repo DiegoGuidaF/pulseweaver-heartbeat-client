@@ -13,30 +13,34 @@ import com.pulseweaver.heartbeat.service.HeartbeatResult
 import kotlinx.coroutines.flow.first
 
 private val Context.resultDataStore: DataStore<Preferences> by preferencesDataStore(
-    name = "heartbeat_result"
+    name = "heartbeat_result",
 )
 
 actual class ResultStore actual constructor() {
-
     private val ds get() = ApplicationContextHolder.context.resultDataStore
 
     actual suspend fun load(): LastHeartbeatState? {
         val prefs = ds.data.first()
         val success = prefs[Keys.SUCCESS] ?: return null
         return LastHeartbeatState(
-            result = HeartbeatResult(
-                success = success,
-                message = prefs[Keys.MESSAGE] ?: "",
-                hint = prefs[Keys.HINT],
-                ip = prefs[Keys.IP],
-                trigger = prefs[Keys.TRIGGER] ?: "",
-            ),
+            result =
+                HeartbeatResult(
+                    success = success,
+                    message = prefs[Keys.MESSAGE] ?: "",
+                    hint = prefs[Keys.HINT],
+                    ip = prefs[Keys.IP],
+                    trigger = prefs[Keys.TRIGGER] ?: "",
+                ),
             time = prefs[Keys.TIME] ?: "",
             epochMs = prefs[Keys.EPOCH_MS] ?: 0L,
         )
     }
 
-    actual suspend fun save(result: HeartbeatResult, time: String, epochMs: Long) {
+    actual suspend fun save(
+        result: HeartbeatResult,
+        time: String,
+        epochMs: Long,
+    ) {
         ds.edit { prefs ->
             prefs[Keys.SUCCESS] = result.success
             prefs[Keys.MESSAGE] = result.message

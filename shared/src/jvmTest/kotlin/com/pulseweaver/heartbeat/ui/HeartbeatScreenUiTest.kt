@@ -11,7 +11,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
-import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
@@ -30,7 +29,6 @@ import kotlin.test.Test
  */
 @OptIn(ExperimentalTestApi::class)
 class HeartbeatScreenUiTest {
-
     private val testScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val scheduler = BackgroundScheduler(testScope)
 
@@ -45,127 +43,136 @@ class HeartbeatScreenUiTest {
     // ── Layout presence ─────────────────────────────────────────────
 
     @Test
-    fun screenRendersAppTitle() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun screenRendersAppTitle() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.APP_TITLE).assertIsDisplayed()
-        onNodeWithText("PulseWeaver", substring = true).assertIsDisplayed()
-    }
+            onNodeWithTag(TestTags.APP_TITLE).assertIsDisplayed()
+            onNodeWithText("PulseWeaver", substring = true).assertIsDisplayed()
+        }
 
     @Test
-    fun screenRendersAllCards() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun screenRendersAllCards() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.STATUS_HERO).assertIsDisplayed()
-        onNodeWithTag(TestTags.CONNECTION_CARD).assertIsDisplayed()
-        // These cards may be below the fold — scroll to them first
-        onNodeWithTag(TestTags.SCHEDULE_CARD).performScrollTo().assertIsDisplayed()
-        onNodeWithTag(TestTags.APPEARANCE_CARD).performScrollTo().assertIsDisplayed()
-    }
+            onNodeWithTag(TestTags.STATUS_HERO).assertIsDisplayed()
+            onNodeWithTag(TestTags.CONNECTION_CARD).assertIsDisplayed()
+            // These cards may be below the fold — scroll to them first
+            onNodeWithTag(TestTags.SCHEDULE_CARD).performScrollTo().assertIsDisplayed()
+            onNodeWithTag(TestTags.APPEARANCE_CARD).performScrollTo().assertIsDisplayed()
+        }
 
     @Test
-    fun statusHeroShowsStoppedByDefault() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun statusHeroShowsStoppedByDefault() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.STATUS_LABEL).assertTextEquals("Stopped")
-    }
+            onNodeWithTag(TestTags.STATUS_LABEL).assertTextEquals("Stopped")
+        }
 
     // ── Heartbeat switch gating ─────────────────────────────────────
 
     @Test
-    fun heartbeatSwitchDisabledWithoutConfig() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun heartbeatSwitchDisabledWithoutConfig() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.HEARTBEAT_SWITCH).performScrollTo()
-        onNodeWithTag(TestTags.HEARTBEAT_SWITCH).assertIsNotEnabled()
-    }
+            onNodeWithTag(TestTags.HEARTBEAT_SWITCH).performScrollTo()
+            onNodeWithTag(TestTags.HEARTBEAT_SWITCH).assertIsNotEnabled()
+        }
 
     @Test
-    fun heartbeatSwitchEnabledAfterValidConfig() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun heartbeatSwitchEnabledAfterValidConfig() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
+
+            // Fill in valid server URL and API key
+            onNodeWithTag(TestTags.SERVER_URL_FIELD).performTextInput("https://example.com")
+            onNodeWithTag(TestTags.API_KEY_FIELD).performTextInput("test-key")
+
+            onNodeWithTag(TestTags.HEARTBEAT_SWITCH).performScrollTo()
+            onNodeWithTag(TestTags.HEARTBEAT_SWITCH).assertIsEnabled()
         }
-
-        // Fill in valid server URL and API key
-        onNodeWithTag(TestTags.SERVER_URL_FIELD).performTextInput("https://example.com")
-        onNodeWithTag(TestTags.API_KEY_FIELD).performTextInput("test-key")
-
-        onNodeWithTag(TestTags.HEARTBEAT_SWITCH).performScrollTo()
-        onNodeWithTag(TestTags.HEARTBEAT_SWITCH).assertIsEnabled()
-    }
 
     // ── Theme chips ─────────────────────────────────────────────────
 
     @Test
-    fun themeChipsArePresent() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun themeChipsArePresent() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.THEME_CHIP_AUTO).performScrollTo().assertIsDisplayed()
-        onNodeWithTag(TestTags.THEME_CHIP_LIGHT).performScrollTo().assertIsDisplayed()
-        onNodeWithTag(TestTags.THEME_CHIP_DARK).performScrollTo().assertIsDisplayed()
-    }
+            onNodeWithTag(TestTags.THEME_CHIP_AUTO).performScrollTo().assertIsDisplayed()
+            onNodeWithTag(TestTags.THEME_CHIP_LIGHT).performScrollTo().assertIsDisplayed()
+            onNodeWithTag(TestTags.THEME_CHIP_DARK).performScrollTo().assertIsDisplayed()
+        }
 
     @Test
-    fun themeChipClickChangesSelection() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun themeChipClickChangesSelection() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.THEME_CHIP_DARK).performScrollTo().performClick()
-        onNodeWithTag(TestTags.THEME_CHIP_DARK).assertIsDisplayed()
-    }
+            onNodeWithTag(TestTags.THEME_CHIP_DARK).performScrollTo().performClick()
+            onNodeWithTag(TestTags.THEME_CHIP_DARK).assertIsDisplayed()
+        }
 
     // ── Desktop-specific: Send Now button ───────────────────────────
 
     @Test
-    fun sendNowButtonDisabledWithoutConfig() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun sendNowButtonDisabledWithoutConfig() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
-        }
 
-        // On JVM, platformHasBackgroundLimit == false, so Send Now appears
-        onNodeWithTag(TestTags.SEND_NOW_BUTTON).performScrollTo().assertIsDisplayed()
-        onNodeWithTag(TestTags.SEND_NOW_BUTTON).assertIsNotEnabled()
-    }
+            // On JVM, platformHasBackgroundLimit == false, so Send Now appears
+            onNodeWithTag(TestTags.SEND_NOW_BUTTON).performScrollTo().assertIsDisplayed()
+            onNodeWithTag(TestTags.SEND_NOW_BUTTON).assertIsNotEnabled()
+        }
 
     @Test
-    fun sendNowButtonEnabledAfterValidConfig() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                HeartbeatScreen(scheduler = scheduler)
+    fun sendNowButtonEnabledAfterValidConfig() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
             }
+
+            onNodeWithTag(TestTags.SERVER_URL_FIELD).performTextInput("https://example.com")
+            onNodeWithTag(TestTags.API_KEY_FIELD).performTextInput("key")
+
+            onNodeWithTag(TestTags.SEND_NOW_BUTTON).performScrollTo()
+            onNodeWithTag(TestTags.SEND_NOW_BUTTON).assertIsEnabled()
         }
-
-        onNodeWithTag(TestTags.SERVER_URL_FIELD).performTextInput("https://example.com")
-        onNodeWithTag(TestTags.API_KEY_FIELD).performTextInput("key")
-
-        onNodeWithTag(TestTags.SEND_NOW_BUTTON).performScrollTo()
-        onNodeWithTag(TestTags.SEND_NOW_BUTTON).assertIsEnabled()
-    }
 }

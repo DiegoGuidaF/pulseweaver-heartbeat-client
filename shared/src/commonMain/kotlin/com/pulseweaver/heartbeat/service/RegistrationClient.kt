@@ -12,22 +12,28 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 sealed interface RegistrationResult {
-    data class Success(val response: RegistrationResponse) : RegistrationResult
-    data class Error(val message: String) : RegistrationResult
+    data class Success(
+        val response: RegistrationResponse,
+    ) : RegistrationResult
+
+    data class Error(
+        val message: String,
+    ) : RegistrationResult
 }
 
 class RegistrationClient(
     private val client: HttpClient = HeartbeatClient.defaultClient(),
 ) {
-    suspend fun claim(code: String): RegistrationResult {
-        return try {
+    suspend fun claim(code: String): RegistrationResult =
+        try {
             val serverUrl = decodeServerURL(code)
             val url = serverUrl.trimEnd('/') + "/api/v1/device-pair"
-            val response = client.post(url) {
-                contentType(ContentType.Application.Json)
-                setBody("""{"code":"$code"}""")
-                timeout { requestTimeoutMillis = 15_000 }
-            }
+            val response =
+                client.post(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody("""{"code":"$code"}""")
+                    timeout { requestTimeoutMillis = 15_000 }
+                }
             when (response.status.value) {
                 200, 201 -> RegistrationResult.Success(response.body())
                 400 -> RegistrationResult.Error("Invalid registration code")
@@ -41,7 +47,6 @@ class RegistrationClient(
         } catch (e: Exception) {
             RegistrationResult.Error("Connection failed")
         }
-    }
 
     companion object {
         /**

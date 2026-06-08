@@ -54,29 +54,32 @@ fun SetupScreen(
     val configStore = remember { ConfigStore() }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp, vertical = 48.dp)
-            .testTag(TestTags.SETUP_SCREEN),
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp, vertical = 48.dp)
+                .testTag(TestTags.SETUP_SCREEN),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
         // Branding
         Box(
-            modifier = Modifier
-                .size(10.dp)
-                .background(Amber, CircleShape),
+            modifier =
+                Modifier
+                    .size(10.dp)
+                    .background(Amber, CircleShape),
         )
         Spacer(Modifier.height(12.dp))
         Text(
-            text = buildAnnotatedString {
-                withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) {
-                    append("Pulse")
-                }
-                withStyle(SpanStyle(fontWeight = FontWeight.Normal)) {
-                    append("Weaver")
-                }
-            },
+            text =
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) {
+                        append("Pulse")
+                    }
+                    withStyle(SpanStyle(fontWeight = FontWeight.Normal)) {
+                        append("Weaver")
+                    }
+                },
             style = MaterialTheme.typography.headlineMedium,
         )
 
@@ -104,9 +107,10 @@ fun SetupScreen(
             },
             placeholder = { Text("Paste code here") },
             singleLine = true,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(TestTags.REGISTRATION_CODE_FIELD),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag(TestTags.REGISTRATION_CODE_FIELD),
         )
 
         if (errorMessage.isNotEmpty()) {
@@ -129,14 +133,15 @@ fun SetupScreen(
                     when (val result = registrationClient.claim(code.trim())) {
                         is RegistrationResult.Success -> {
                             val r = result.response
-                            val config = HeartbeatConfig(
-                                serverUrl = r.serverUrl,
-                                apiKey = r.apiKey,
-                                intervalSeconds = r.intervalSeconds,
-                                enabled = true,
-                                biometricEnabled = r.appBiometricEnabled,
-                                settingsLocked = r.appSettingsLocked,
-                            )
+                            val config =
+                                HeartbeatConfig(
+                                    serverUrl = r.serverUrl,
+                                    apiKey = r.apiKey,
+                                    intervalSeconds = r.intervalSeconds,
+                                    enabled = true,
+                                    biometricEnabled = r.appBiometricEnabled,
+                                    settingsLocked = r.appSettingsLocked,
+                                )
                             configStore.save(config)
                             onProvisioningComplete(config)
                         }
@@ -148,9 +153,10 @@ fun SetupScreen(
                 }
             },
             enabled = code.isNotBlank() && !isLoading,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag(TestTags.ACTIVATE_BUTTON),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag(TestTags.ACTIVATE_BUTTON),
         ) {
             if (isLoading) {
                 CircularProgressIndicator(

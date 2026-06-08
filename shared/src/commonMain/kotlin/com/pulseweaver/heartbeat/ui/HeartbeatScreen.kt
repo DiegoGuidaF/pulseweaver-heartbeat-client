@@ -43,8 +43,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import com.pulseweaver.heartbeat.config.ThemeMode
-import com.pulseweaver.heartbeat.service.HeartbeatUtils
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -58,17 +56,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
 import com.pulseweaver.heartbeat.config.ResultStore
+import com.pulseweaver.heartbeat.config.ThemeMode
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.BiometricAuth
 import com.pulseweaver.heartbeat.platform.NetworkMonitor
@@ -78,6 +77,7 @@ import com.pulseweaver.heartbeat.platform.currentTimeForDisplay
 import com.pulseweaver.heartbeat.platform.platformHasBackgroundLimit
 import com.pulseweaver.heartbeat.service.HeartbeatClient
 import com.pulseweaver.heartbeat.service.HeartbeatResult
+import com.pulseweaver.heartbeat.service.HeartbeatUtils
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.time.TimeSource
@@ -145,7 +145,7 @@ fun HeartbeatScreen(
     // Load config and last heartbeat result on startup
     LaunchedEffect(Unit) {
         val loaded = configStore.load()
-        lastSavedConfig = loaded  // mark as already-on-disk so auto-save skips it
+        lastSavedConfig = loaded // mark as already-on-disk so auto-save skips it
         config = loaded
         val savedState = resultStore.load()
         if (savedState != null) {
@@ -181,7 +181,10 @@ fun HeartbeatScreen(
 
     // Countdown ticker
     LaunchedEffect(lastResultMark, config.intervalSeconds, config.enabled) {
-        if (!config.enabled || lastResultMark == null) { nextInDisplay = ""; return@LaunchedEffect }
+        if (!config.enabled || lastResultMark == null) {
+            nextInDisplay = ""
+            return@LaunchedEffect
+        }
         while (true) {
             val elapsed = lastResultMark!!.elapsedNow().inWholeSeconds
             val remaining = config.intervalSeconds - elapsed
@@ -193,7 +196,10 @@ fun HeartbeatScreen(
 
     // Elapsed-since-last-heartbeat ticker — updates every 30s, drives "Xm ago" label
     LaunchedEffect(lastResultEpochMs) {
-        if (lastResultEpochMs == 0L) { elapsedDisplay = ""; return@LaunchedEffect }
+        if (lastResultEpochMs == 0L) {
+            elapsedDisplay = ""
+            return@LaunchedEffect
+        }
         while (true) {
             elapsedDisplay = HeartbeatUtils.formatElapsed(lastResultEpochMs, currentEpochMs())
             delay(30_000)
@@ -226,36 +232,40 @@ fun HeartbeatScreen(
                     ) {
                         // Small amber pulse dot
                         Box(
-                            modifier = Modifier
-                                .size(8.dp)
-                                .background(Amber, CircleShape),
+                            modifier =
+                                Modifier
+                                    .size(8.dp)
+                                    .background(Amber, CircleShape),
                         )
                         Text(
-                            text = buildAnnotatedString {
-                                withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) {
-                                    append("Pulse")
-                                }
-                                withStyle(SpanStyle(fontWeight = FontWeight.Normal)) {
-                                    append("Weaver")
-                                }
-                            },
+                            text =
+                                buildAnnotatedString {
+                                    withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) {
+                                        append("Pulse")
+                                    }
+                                    withStyle(SpanStyle(fontWeight = FontWeight.Normal)) {
+                                        append("Weaver")
+                                    }
+                                },
                             style = MaterialTheme.typography.titleLarge,
                             modifier = Modifier.testTag(TestTags.APP_TITLE),
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ),
+                colors =
+                    TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface,
+                    ),
             )
         },
     ) { innerPadding ->
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             // ── Status hero ────────────────────────────────────────────────
@@ -327,7 +337,11 @@ fun HeartbeatScreen(
                 ) {
                     Text("Schedule", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Column {
-                        Text("Check every", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Check every",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                         Spacer(Modifier.height(6.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             INTERVAL_SECONDS.forEachIndexed { i, seconds ->
@@ -349,7 +363,11 @@ fun HeartbeatScreen(
                         Column {
                             Text("Heartbeat", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
                             if (!isConfigValid) {
-                                Text("Enter server URL and API key to enable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    "Enter server URL and API key to enable",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                         }
                         Switch(
@@ -446,11 +464,12 @@ fun HeartbeatScreen(
                     Text("Theme", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ThemeMode.entries.forEach { mode ->
-                            val chipTag = when (mode) {
-                                ThemeMode.AUTO -> TestTags.THEME_CHIP_AUTO
-                                ThemeMode.LIGHT -> TestTags.THEME_CHIP_LIGHT
-                                ThemeMode.DARK -> TestTags.THEME_CHIP_DARK
-                            }
+                            val chipTag =
+                                when (mode) {
+                                    ThemeMode.AUTO -> TestTags.THEME_CHIP_AUTO
+                                    ThemeMode.LIGHT -> TestTags.THEME_CHIP_LIGHT
+                                    ThemeMode.DARK -> TestTags.THEME_CHIP_DARK
+                                }
                             FilterChip(
                                 selected = config.themeMode == mode,
                                 onClick = {
@@ -458,11 +477,13 @@ fun HeartbeatScreen(
                                     onThemeModeChange(mode)
                                 },
                                 label = {
-                                    Text(when (mode) {
-                                        ThemeMode.AUTO -> "Auto"
-                                        ThemeMode.LIGHT -> "Light"
-                                        ThemeMode.DARK -> "Dark"
-                                    })
+                                    Text(
+                                        when (mode) {
+                                            ThemeMode.AUTO -> "Auto"
+                                            ThemeMode.LIGHT -> "Light"
+                                            ThemeMode.DARK -> "Dark"
+                                        },
+                                    )
                                 },
                                 modifier = Modifier.testTag(chipTag),
                             )
@@ -494,11 +515,12 @@ private fun StatusHero(
     isConfigValid: Boolean = false,
     onTap: () -> Unit = {},
 ) {
-    val statusColor = when {
-        !enabled -> StoppedGrey
-        lastResult?.success == false -> ErrorRed
-        else -> Amber
-    }
+    val statusColor =
+        when {
+            !enabled -> StoppedGrey
+            lastResult?.success == false -> ErrorRed
+            else -> Amber
+        }
 
     // Pulsing ripple — only computed and running when active and healthy
     val showPulse = enabled && lastResult?.success != false
@@ -506,16 +528,22 @@ private fun StatusHero(
     val pulseAlpha: Float
     if (showPulse) {
         val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-        pulseScale = infiniteTransition.animateFloat(
-            initialValue = 1f, targetValue = 1.8f,
-            animationSpec = infiniteRepeatable(tween(2400, easing = EaseOut), RepeatMode.Restart),
-            label = "pulseScale",
-        ).value
-        pulseAlpha = infiniteTransition.animateFloat(
-            initialValue = 0.5f, targetValue = 0f,
-            animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
-            label = "pulseAlpha",
-        ).value
+        pulseScale =
+            infiniteTransition
+                .animateFloat(
+                    initialValue = 1f,
+                    targetValue = 1.8f,
+                    animationSpec = infiniteRepeatable(tween(2400, easing = EaseOut), RepeatMode.Restart),
+                    label = "pulseScale",
+                ).value
+        pulseAlpha =
+            infiniteTransition
+                .animateFloat(
+                    initialValue = 0.5f,
+                    targetValue = 0f,
+                    animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
+                    label = "pulseAlpha",
+                ).value
     } else {
         pulseScale = 1f
         pulseAlpha = 0f
@@ -530,16 +558,18 @@ private fun StatusHero(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .clickable(enabled = canTap) { onTap() },
+            modifier =
+                Modifier
+                    .clickable(enabled = canTap) { onTap() },
         ) {
             // Ripple ring
             if (showPulse) {
                 Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .scale(pulseScale)
-                        .background(statusColor.copy(alpha = pulseAlpha), CircleShape),
+                    modifier =
+                        Modifier
+                            .size(72.dp)
+                            .scale(pulseScale)
+                            .background(statusColor.copy(alpha = pulseAlpha), CircleShape),
                 )
             }
             // Status circle
@@ -562,12 +592,13 @@ private fun StatusHero(
         }
 
         Text(
-            text = when {
-                isSending -> "Sending…"
-                !enabled -> "Stopped"
-                lastResult?.success == false -> "Error"
-                else -> "Active"
-            },
+            text =
+                when {
+                    isSending -> "Sending…"
+                    !enabled -> "Stopped"
+                    lastResult?.success == false -> "Error"
+                    else -> "Active"
+                },
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.SemiBold,
             color = statusColor,
@@ -593,8 +624,12 @@ private fun StatusHero(
         if (lastResultTime.isNotEmpty()) {
             val elapsedSuffix = if (elapsedDisplay.isNotEmpty()) " ($elapsedDisplay)" else ""
             Text(
-                text = if (nextInDisplay.isNotEmpty()) "Next in $nextInDisplay · Last $lastResultTime$elapsedSuffix"
-                       else "Last sent $lastResultTime$elapsedSuffix",
+                text =
+                    if (nextInDisplay.isNotEmpty()) {
+                        "Next in $nextInDisplay · Last $lastResultTime$elapsedSuffix"
+                    } else {
+                        "Last sent $lastResultTime$elapsedSuffix"
+                    },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -610,14 +645,20 @@ private fun LastResultRow(
     elapsedDisplay: String,
     nextInDisplay: String,
 ) {
-    val resultColor = when {
-        lastResult.success -> Amber
-        lastResult.message.contains("limited", ignoreCase = true) -> WarningYellow
-        else -> ErrorRed
-    }
+    val resultColor =
+        when {
+            lastResult.success -> Amber
+            lastResult.message.contains("limited", ignoreCase = true) -> WarningYellow
+            else -> ErrorRed
+        }
 
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text("Last response", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            "Last response",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
         Spacer(Modifier.height(2.dp))
         Text(
             text = lastResult.message,
@@ -661,9 +702,10 @@ private fun ConnectionCard(
         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
             // Header row — always visible, tappable when configured
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (isConfigValid) Modifier.clickable { onExpandToggle() } else Modifier),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .then(if (isConfigValid) Modifier.clickable { onExpandToggle() } else Modifier),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {

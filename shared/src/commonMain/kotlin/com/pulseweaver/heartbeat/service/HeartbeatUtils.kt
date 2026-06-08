@@ -7,13 +7,15 @@ import com.pulseweaver.heartbeat.config.ThemeMode
  * unit-tested without a Compose runtime.
  */
 object HeartbeatUtils {
-
     /**
      * Human-readable elapsed time since a past epoch timestamp.
      *
      *     formatElapsed(epochMs, now)  →  "<1m ago" | "5m ago" | "2h ago" | "3d ago"
      */
-    fun formatElapsed(epochMs: Long, nowMs: Long): String {
+    fun formatElapsed(
+        epochMs: Long,
+        nowMs: Long,
+    ): String {
         val seconds = (nowMs - epochMs) / 1000
         return when {
             seconds < 60 -> "<1m ago"
@@ -40,7 +42,10 @@ object HeartbeatUtils {
      * A heartbeat config is valid when the URL starts with http(s)://
      * and the API key is non-empty.
      */
-    fun isConfigValid(serverUrl: String, apiKey: String): Boolean =
+    fun isConfigValid(
+        serverUrl: String,
+        apiKey: String,
+    ): Boolean =
         (serverUrl.startsWith("http://") || serverUrl.startsWith("https://")) &&
             apiKey.isNotEmpty()
 
@@ -48,7 +53,10 @@ object HeartbeatUtils {
      * Determines whether a dark color scheme should be used based on the
      * persisted [ThemeMode] and the current system preference.
      */
-    fun shouldUseDarkTheme(mode: ThemeMode, systemIsDark: Boolean): Boolean =
+    fun shouldUseDarkTheme(
+        mode: ThemeMode,
+        systemIsDark: Boolean,
+    ): Boolean =
         when (mode) {
             ThemeMode.DARK -> true
             ThemeMode.LIGHT -> false

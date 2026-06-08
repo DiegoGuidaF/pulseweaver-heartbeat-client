@@ -6,17 +6,18 @@ import java.util.prefs.Preferences
 private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat")
 
 actual class ConfigStore actual constructor() {
-
-    actual suspend fun load(): HeartbeatConfig = HeartbeatConfig(
-        serverUrl = prefs.get("serverUrl", ""),
-        apiKey = prefs.get("apiKey", ""),
-        intervalSeconds = prefs.getInt("intervalSeconds", 900),
-        enabled = prefs.getBoolean("enabled", false),
-        biometricEnabled = false, // not applicable on desktop
-        themeMode = runCatching { ThemeMode.valueOf(prefs.get("themeMode", "AUTO")) }
-            .getOrDefault(ThemeMode.AUTO),
-        settingsLocked = prefs.getBoolean("settingsLocked", false),
-    )
+    actual suspend fun load(): HeartbeatConfig =
+        HeartbeatConfig(
+            serverUrl = prefs.get("serverUrl", ""),
+            apiKey = prefs.get("apiKey", ""),
+            intervalSeconds = prefs.getInt("intervalSeconds", 900),
+            enabled = prefs.getBoolean("enabled", false),
+            biometricEnabled = false, // not applicable on desktop
+            themeMode =
+                runCatching { ThemeMode.valueOf(prefs.get("themeMode", "AUTO")) }
+                    .getOrDefault(ThemeMode.AUTO),
+            settingsLocked = prefs.getBoolean("settingsLocked", false),
+        )
 
     actual suspend fun save(config: HeartbeatConfig) {
         prefs.put("serverUrl", config.serverUrl)

@@ -11,7 +11,6 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 
 actual object BiometricAuth {
-
     private val authenticators = BIOMETRIC_WEAK or DEVICE_CREDENTIAL
 
     actual fun isAvailable(): Boolean {
@@ -24,28 +23,35 @@ actual object BiometricAuth {
 
         return suspendCancellableCoroutine { cont ->
             val executor = ContextCompat.getMainExecutor(activity)
-            val callback = object : BiometricPrompt.AuthenticationCallback() {
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                    if (cont.isActive) cont.resume(true)
+            val callback =
+                object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        if (cont.isActive) cont.resume(true)
+                    }
+
+                    override fun onAuthenticationError(
+                        errorCode: Int,
+                        errString: CharSequence,
+                    ) {
+                        if (cont.isActive) cont.resume(false)
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        // Single attempt failed — prompt stays open, don't resolve yet
+                    }
                 }
-                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                    if (cont.isActive) cont.resume(false)
-                }
-                override fun onAuthenticationFailed() {
-                    // Single attempt failed — prompt stays open, don't resolve yet
-                }
-            }
 
             val prompt = BiometricPrompt(activity, executor, callback)
-            val info = BiometricPrompt.PromptInfo.Builder()
-                .setTitle(title)
-                .setSubtitle("Verify your identity to access PulseWeaver Heartbeat")
-                .setAllowedAuthenticators(authenticators)
-                .build()
+            val info =
+                BiometricPrompt.PromptInfo
+                    .Builder()
+                    .setTitle(title)
+                    .setSubtitle("Verify your identity to access PulseWeaver Heartbeat")
+                    .setAllowedAuthenticators(authenticators)
+                    .build()
 
             cont.invokeOnCancellation { prompt.cancelAuthentication() }
             prompt.authenticate(info)
         }
     }
 }
-

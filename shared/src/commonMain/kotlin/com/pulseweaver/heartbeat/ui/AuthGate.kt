@@ -82,14 +82,15 @@ fun AuthGate(content: @Composable () -> Unit) {
     // Reads state values directly (not via delegate) to see current values at observer call time.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME && isAuthenticatedState.value) {
-                val mark = lastAuthMarkState.value
-                if (mark != null && mark.elapsedNow().inWholeSeconds > GRACE_PERIOD_SECONDS) {
-                    authSessionState.value++
+        val observer =
+            LifecycleEventObserver { _, event ->
+                if (event == Lifecycle.Event.ON_RESUME && isAuthenticatedState.value) {
+                    val mark = lastAuthMarkState.value
+                    if (mark != null && mark.elapsedNow().inWholeSeconds > GRACE_PERIOD_SECONDS) {
+                        authSessionState.value++
+                    }
                 }
             }
-        }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
@@ -113,5 +114,3 @@ fun AuthGate(content: @Composable () -> Unit) {
         // else: blank screen while prompt is showing
     }
 }
-
-

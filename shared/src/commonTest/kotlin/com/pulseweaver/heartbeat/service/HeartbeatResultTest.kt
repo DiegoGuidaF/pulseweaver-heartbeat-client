@@ -7,7 +7,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HeartbeatResultTest {
-
     // ── success factory ─────────────────────────────────────────────
 
     @Test
@@ -34,11 +33,12 @@ class HeartbeatResultTest {
 
     @Test
     fun error_carriesMessageAndHint() {
-        val result = HeartbeatResult.error(
-            "Invalid API key",
-            "Check your device settings on the server",
-            trigger = "scheduled",
-        )
+        val result =
+            HeartbeatResult.error(
+                "Invalid API key",
+                "Check your device settings on the server",
+                trigger = "scheduled",
+            )
 
         assertFalse(result.success)
         assertEquals("Invalid API key", result.message)

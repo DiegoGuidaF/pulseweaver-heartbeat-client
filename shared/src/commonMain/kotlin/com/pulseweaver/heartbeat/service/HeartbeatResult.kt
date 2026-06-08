@@ -12,14 +12,21 @@ data class HeartbeatResult(
     val trigger: String,
 ) {
     companion object {
-        fun success(ip: String, trigger: String) = HeartbeatResult(
+        fun success(
+            ip: String,
+            trigger: String,
+        ) = HeartbeatResult(
             success = true,
             message = if (trigger == "manual") "IP updated" else "Heartbeat sent",
             ip = ip,
             trigger = trigger,
         )
 
-        fun error(message: String, hint: String, trigger: String = "scheduled") = HeartbeatResult(
+        fun error(
+            message: String,
+            hint: String,
+            trigger: String = "scheduled",
+        ) = HeartbeatResult(
             success = false,
             message = message,
             hint = hint,

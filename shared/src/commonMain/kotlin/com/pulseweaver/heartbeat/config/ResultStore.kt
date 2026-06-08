@@ -10,5 +10,10 @@ data class LastHeartbeatState(
 
 expect class ResultStore() {
     suspend fun load(): LastHeartbeatState?
-    suspend fun save(result: HeartbeatResult, time: String, epochMs: Long)
+
+    suspend fun save(
+        result: HeartbeatResult,
+        time: String,
+        epochMs: Long,
+    )
 }

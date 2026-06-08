@@ -6,18 +6,23 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-actual class BackgroundScheduler(private val appScope: CoroutineScope) {
-
+actual class BackgroundScheduler(
+    private val appScope: CoroutineScope,
+) {
     private var job: Job? = null
 
-    actual fun schedulePeriodicHeartbeat(intervalSeconds: Int, onTick: suspend () -> Unit) {
+    actual fun schedulePeriodicHeartbeat(
+        intervalSeconds: Int,
+        onTick: suspend () -> Unit,
+    ) {
         job?.cancel()
-        job = appScope.launch {
-            while (isActive) {
-                delay(intervalSeconds * 1_000L)
-                if (isActive) onTick()
+        job =
+            appScope.launch {
+                while (isActive) {
+                    delay(intervalSeconds * 1_000L)
+                    if (isActive) onTick()
+                }
             }
-        }
     }
 
     actual fun cancelHeartbeat() {

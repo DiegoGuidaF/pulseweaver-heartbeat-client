@@ -6,23 +6,27 @@ import java.util.prefs.Preferences
 private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat/result")
 
 actual class ResultStore actual constructor() {
-
     actual suspend fun load(): LastHeartbeatState? {
         val success = prefs.get("success", null) ?: return null
         return LastHeartbeatState(
-            result = HeartbeatResult(
-                success = success.toBoolean(),
-                message = prefs.get("message", ""),
-                hint = prefs.get("hint", null),
-                ip = prefs.get("ip", null),
-                trigger = prefs.get("trigger", ""),
-            ),
+            result =
+                HeartbeatResult(
+                    success = success.toBoolean(),
+                    message = prefs.get("message", ""),
+                    hint = prefs.get("hint", null),
+                    ip = prefs.get("ip", null),
+                    trigger = prefs.get("trigger", ""),
+                ),
             time = prefs.get("time", ""),
             epochMs = prefs.getLong("epochMs", 0L),
         )
     }
 
-    actual suspend fun save(result: HeartbeatResult, time: String, epochMs: Long) {
+    actual suspend fun save(
+        result: HeartbeatResult,
+        time: String,
+        epochMs: Long,
+    ) {
         prefs.put("success", result.success.toString())
         prefs.put("message", result.message)
         if (result.hint != null) prefs.put("hint", result.hint) else prefs.remove("hint")

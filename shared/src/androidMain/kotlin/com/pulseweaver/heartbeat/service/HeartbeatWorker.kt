@@ -8,9 +8,10 @@ import com.pulseweaver.heartbeat.config.ResultStore
 import com.pulseweaver.heartbeat.platform.currentEpochMs
 import com.pulseweaver.heartbeat.platform.currentTimeForDisplay
 
-class HeartbeatWorker(context: Context, params: WorkerParameters) :
-    CoroutineWorker(context, params) {
-
+class HeartbeatWorker(
+    context: Context,
+    params: WorkerParameters,
+) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
         val config = ConfigStore().load()
         if (!config.enabled) return Result.success()

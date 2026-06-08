@@ -9,5 +9,6 @@ package com.pulseweaver.heartbeat.platform
  */
 expect class NetworkMonitor() {
     fun startMonitoring(onNetworkChange: () -> Unit)
+
     fun stopMonitoring()
 }

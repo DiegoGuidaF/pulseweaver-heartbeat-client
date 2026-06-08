@@ -20,21 +20,24 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class RegistrationClientTest {
-
     private val jsonHeaders = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString())
 
     private fun buildCode(serverUrl: String): String {
         @OptIn(ExperimentalEncodingApi::class)
         return Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT).encode(
-            ByteArray(32) { it.toByte() } + serverUrl.encodeToByteArray()
+            ByteArray(32) { it.toByte() } + serverUrl.encodeToByteArray(),
         )
     }
 
-    private fun mockClient(body: String, status: HttpStatusCode): RegistrationClient {
+    private fun mockClient(
+        body: String,
+        status: HttpStatusCode,
+    ): RegistrationClient {
         val engine = MockEngine { respond(body, status, jsonHeaders) }
-        val httpClient = HttpClient(engine) {
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
-        }
+        val httpClient =
+            HttpClient(engine) {
+                install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+            }
         return RegistrationClient(httpClient)
     }
 
@@ -73,7 +76,8 @@ class RegistrationClientTest {
 
     // ── claim ───────────────────────────────────────────────────────
 
-    private val sampleResponseBody = """
+    private val sampleResponseBody =
+        """
         {
             "server_url": "https://pulse.example.com",
             "api_key": "wdk_ABCD1234",
@@ -81,68 +85,74 @@ class RegistrationClientTest {
             "app_biometric_enabled": false,
             "app_settings_locked": true
         }
-    """.trimIndent()
+        """.trimIndent()
 
     @Test
-    fun claim_200_returnsSuccessWithParsedResponse() = runTest {
-        val code = buildCode("https://pulse.example.com")
-        val client = mockClient(sampleResponseBody, HttpStatusCode.OK)
+    fun claim_200_returnsSuccessWithParsedResponse() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val client = mockClient(sampleResponseBody, HttpStatusCode.OK)
 
-        val result = client.claim(code)
+            val result = client.claim(code)
 
-        assertIs<RegistrationResult.Success>(result)
-        assertEquals("https://pulse.example.com", result.response.serverUrl)
-        assertEquals("wdk_ABCD1234", result.response.apiKey)
-        assertEquals(900, result.response.intervalSeconds)
-        assertEquals(false, result.response.appBiometricEnabled)
-        assertEquals(true, result.response.appSettingsLocked)
-    }
-
-    @Test
-    fun claim_400_returnsInvalidCodeError() = runTest {
-        val code = buildCode("https://pulse.example.com")
-        val client = mockClient("Bad Request", HttpStatusCode.BadRequest)
-
-        val result = client.claim(code)
-
-        assertIs<RegistrationResult.Error>(result)
-        assertEquals("Invalid registration code", result.message)
-    }
-
-    @Test
-    fun claim_404_returnsExpiredOrUsedError() = runTest {
-        val code = buildCode("https://pulse.example.com")
-        val client = mockClient("Not Found", HttpStatusCode.NotFound)
-
-        val result = client.claim(code)
-
-        assertIs<RegistrationResult.Error>(result)
-        assertEquals("Code expired or already used", result.message)
-    }
-
-    @Test
-    fun claim_410_returnsExpiredOrUsedError() = runTest {
-        val code = buildCode("https://pulse.example.com")
-        val client = mockClient("Gone", HttpStatusCode.Gone)
-
-        val result = client.claim(code)
-
-        assertIs<RegistrationResult.Error>(result)
-        assertEquals("Code expired or already used", result.message)
-    }
-
-    @Test
-    fun claim_networkFailure_returnsConnectionFailed() = runTest {
-        val code = buildCode("https://pulse.example.com")
-        val engine = MockEngine { throw RuntimeException("No route to host") }
-        val httpClient = HttpClient(engine) {
-            install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+            assertIs<RegistrationResult.Success>(result)
+            assertEquals("https://pulse.example.com", result.response.serverUrl)
+            assertEquals("wdk_ABCD1234", result.response.apiKey)
+            assertEquals(900, result.response.intervalSeconds)
+            assertEquals(false, result.response.appBiometricEnabled)
+            assertEquals(true, result.response.appSettingsLocked)
         }
-        val client = RegistrationClient(httpClient)
 
-        val result = client.claim(code)
+    @Test
+    fun claim_400_returnsInvalidCodeError() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val client = mockClient("Bad Request", HttpStatusCode.BadRequest)
 
-        assertIs<RegistrationResult.Error>(result)
-        assertEquals("Connection failed", result.message)
-    }
+            val result = client.claim(code)
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals("Invalid registration code", result.message)
+        }
+
+    @Test
+    fun claim_404_returnsExpiredOrUsedError() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val client = mockClient("Not Found", HttpStatusCode.NotFound)
+
+            val result = client.claim(code)
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals("Code expired or already used", result.message)
+        }
+
+    @Test
+    fun claim_410_returnsExpiredOrUsedError() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val client = mockClient("Gone", HttpStatusCode.Gone)
+
+            val result = client.claim(code)
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals("Code expired or already used", result.message)
+        }
+
+    @Test
+    fun claim_networkFailure_returnsConnectionFailed() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val engine = MockEngine { throw RuntimeException("No route to host") }
+            val httpClient =
+                HttpClient(engine) {
+                    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+                }
+            val client = RegistrationClient(httpClient)
+
+            val result = client.claim(code)
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals("Connection failed", result.message)
+        }
 }

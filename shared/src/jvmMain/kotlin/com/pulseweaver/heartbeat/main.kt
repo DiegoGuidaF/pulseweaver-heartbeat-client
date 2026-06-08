@@ -19,73 +19,79 @@ import com.pulseweaver.heartbeat.service.HeartbeatResult
 
 private val ActiveAmber = Color(0xFFFFA94D)
 private val StoppedGrey = Color(0xFF9E9E9E)
-private val ErrorRed  = Color(0xFFFA5252)
+private val ErrorRed = Color(0xFFFA5252)
 
-fun main() = application {
-    val appScope = rememberCoroutineScope()
-    val scheduler = remember { BackgroundScheduler(appScope) }
-    var lastResult by remember { mutableStateOf<HeartbeatResult?>(null) }
-    var isWindowVisible by remember { mutableStateOf(true) }
-    var sendNowTrigger by remember { mutableStateOf(0) }
+fun main() =
+    application {
+        val appScope = rememberCoroutineScope()
+        val scheduler = remember { BackgroundScheduler(appScope) }
+        var lastResult by remember { mutableStateOf<HeartbeatResult?>(null) }
+        var isWindowVisible by remember { mutableStateOf(true) }
+        var sendNowTrigger by remember { mutableStateOf(0) }
 
-    val trayColor = when {
-        lastResult?.success == false -> ErrorRed
-        lastResult?.success == true  -> ActiveAmber
-        else -> StoppedGrey
-    }
-    val trayTooltip = when {
-        lastResult?.success == false -> "PulseWeaver — Error: ${lastResult?.message}"
-        lastResult?.success == true  -> "PulseWeaver — Active · IP: ${lastResult?.ip ?: "unknown"}"
-        else -> "PulseWeaver — Stopped"
-    }
+        val trayColor =
+            when {
+                lastResult?.success == false -> ErrorRed
+                lastResult?.success == true -> ActiveAmber
+                else -> StoppedGrey
+            }
+        val trayTooltip =
+            when {
+                lastResult?.success == false -> "PulseWeaver — Error: ${lastResult?.message}"
+                lastResult?.success == true -> "PulseWeaver — Active · IP: ${lastResult?.ip ?: "unknown"}"
+                else -> "PulseWeaver — Stopped"
+            }
 
-    Tray(
-        icon = remember(trayColor) { trayIcon(trayColor) },
-        tooltip = trayTooltip,
-        menu = {
-            Item(
-                text = lastResult?.let { if (it.success) "✓ ${it.message}" else "✗ ${it.message}" } ?: "Idle",
-                enabled = false,
-                onClick = {},
-            )
-            Separator()
-            Item("Send Now", onClick = { sendNowTrigger++ })
-            Item("Show Window", onClick = { isWindowVisible = true })
-            Separator()
-            Item("Quit", onClick = { exitApplication() })
-        },
-    )
+        Tray(
+            icon = remember(trayColor) { trayIcon(trayColor) },
+            tooltip = trayTooltip,
+            menu = {
+                Item(
+                    text = lastResult?.let { if (it.success) "✓ ${it.message}" else "✗ ${it.message}" } ?: "Idle",
+                    enabled = false,
+                    onClick = {},
+                )
+                Separator()
+                Item("Send Now", onClick = { sendNowTrigger++ })
+                Item("Show Window", onClick = { isWindowVisible = true })
+                Separator()
+                Item("Quit", onClick = { exitApplication() })
+            },
+        )
 
-    if (isWindowVisible) {
-        Window(
-            onCloseRequest = { isWindowVisible = false },
-            title = "PulseWeaver Heartbeat",
-            state = rememberWindowState(size = DpSize(460.dp, 720.dp)),
-        ) {
-            App(
-                scheduler = scheduler,
-                onLastResultChange = { lastResult = it },
-                sendNowTrigger = sendNowTrigger,
-            )
+        if (isWindowVisible) {
+            Window(
+                onCloseRequest = { isWindowVisible = false },
+                title = "PulseWeaver Heartbeat",
+                state = rememberWindowState(size = DpSize(460.dp, 720.dp)),
+            ) {
+                App(
+                    scheduler = scheduler,
+                    onLastResultChange = { lastResult = it },
+                    sendNowTrigger = sendNowTrigger,
+                )
+            }
         }
     }
-}
 
 /** Draws a filled circle in the given colour as the system tray icon. */
 private fun trayIcon(color: Color): BitmapPainter {
     val size = 32
     val bitmap = ImageBitmap(size, size)
-    val canvas = androidx.compose.ui.graphics.Canvas(bitmap)
-    val paint = androidx.compose.ui.graphics.Paint().apply {
-        this.color = color
-        isAntiAlias = true
-    }
+    val canvas =
+        androidx.compose.ui.graphics
+            .Canvas(bitmap)
+    val paint =
+        androidx.compose.ui.graphics.Paint().apply {
+            this.color = color
+            isAntiAlias = true
+        }
     canvas.drawCircle(
-        center = androidx.compose.ui.geometry.Offset(size / 2f, size / 2f),
+        center =
+            androidx.compose.ui.geometry
+                .Offset(size / 2f, size / 2f),
         radius = size / 2f - 1f,
         paint = paint,
     )
     return BitmapPainter(bitmap)
 }
-
-

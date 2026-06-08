@@ -16,52 +16,55 @@ import kotlin.test.Test
  */
 @OptIn(ExperimentalTestApi::class)
 class SetupScreenUiTest {
-
     // ── Layout presence ─────────────────────────────────────────────
 
     @Test
-    fun screenRendersCodeFieldAndActivateButton() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+    fun screenRendersCodeFieldAndActivateButton() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.REGISTRATION_CODE_FIELD).assertIsDisplayed()
-        onNodeWithTag(TestTags.ACTIVATE_BUTTON).assertIsDisplayed()
-    }
+            onNodeWithTag(TestTags.REGISTRATION_CODE_FIELD).assertIsDisplayed()
+            onNodeWithTag(TestTags.ACTIVATE_BUTTON).assertIsDisplayed()
+        }
 
     @Test
-    fun activateButtonDisabledWhenFieldEmpty() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+    fun activateButtonDisabledWhenFieldEmpty() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.ACTIVATE_BUTTON).assertIsNotEnabled()
-    }
+            onNodeWithTag(TestTags.ACTIVATE_BUTTON).assertIsNotEnabled()
+        }
 
     @Test
-    fun activateButtonEnabledAfterCodeEntered() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+    fun activateButtonEnabledAfterCodeEntered() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.REGISTRATION_CODE_FIELD).performTextInput("someregistrationcode")
-        onNodeWithTag(TestTags.ACTIVATE_BUTTON).assertIsEnabled()
-    }
+            onNodeWithTag(TestTags.REGISTRATION_CODE_FIELD).performTextInput("someregistrationcode")
+            onNodeWithTag(TestTags.ACTIVATE_BUTTON).assertIsEnabled()
+        }
 
     @Test
-    fun manualSetupLinkIsDisplayed() = runComposeUiTest {
-        setContent {
-            MaterialTheme(colorScheme = lightColorScheme()) {
-                SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+    fun manualSetupLinkIsDisplayed() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    SetupScreen(onProvisioningComplete = {}, onManualSetup = {})
+                }
             }
-        }
 
-        onNodeWithTag(TestTags.MANUAL_SETUP_LINK).assertIsDisplayed()
-    }
+            onNodeWithTag(TestTags.MANUAL_SETUP_LINK).assertIsDisplayed()
+        }
 }

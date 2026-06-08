@@ -11,6 +11,10 @@ package com.pulseweaver.heartbeat.platform
  * Common code never constructs this; it is always passed in from the entry point.
  */
 expect class BackgroundScheduler {
-    fun schedulePeriodicHeartbeat(intervalSeconds: Int, onTick: suspend () -> Unit)
+    fun schedulePeriodicHeartbeat(
+        intervalSeconds: Int,
+        onTick: suspend () -> Unit,
+    )
+
     fun cancelHeartbeat()
 }

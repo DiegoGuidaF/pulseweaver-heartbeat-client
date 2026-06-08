@@ -11,47 +11,55 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
-import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.json.Json
+import kotlin.coroutines.cancellation.CancellationException
 
 class HeartbeatClient(
     private val client: HttpClient = defaultClient(),
 ) {
-    suspend fun send(config: HeartbeatConfig, trigger: String): HeartbeatResult {
+    suspend fun send(
+        config: HeartbeatConfig,
+        trigger: String,
+    ): HeartbeatResult {
         val url = config.serverUrl.trimEnd('/') + "/api/v1/heartbeat"
 
         return try {
-            val response = client.post(url) {
-                header("X-API-Key", config.apiKey)
-                contentType(ContentType.Application.Json)
-                setBody("{}")
-                timeout { requestTimeoutMillis = 10_000 }
-            }
+            val response =
+                client.post(url) {
+                    header("X-API-Key", config.apiKey)
+                    contentType(ContentType.Application.Json)
+                    setBody("{}")
+                    timeout { requestTimeoutMillis = 10_000 }
+                }
             when (response.status.value) {
                 200, 201 -> {
                     val body = response.body<AddressResponse>()
                     HeartbeatResult.success(body.ip, trigger)
                 }
-                401 -> HeartbeatResult.error(
-                    "Invalid API key",
-                    "Check your device settings on the server",
-                    trigger,
-                )
-                404 -> HeartbeatResult.error(
-                    "Device not found",
-                    "The device may have been deleted",
-                    trigger,
-                )
-                429 -> HeartbeatResult.error(
-                    "Rate limited",
-                    "Will retry on next scheduled heartbeat",
-                    trigger,
-                )
-                else -> HeartbeatResult.error(
-                    "Server error (${response.status.value})",
-                    "Will retry on next scheduled heartbeat",
-                    trigger,
-                )
+                401 ->
+                    HeartbeatResult.error(
+                        "Invalid API key",
+                        "Check your device settings on the server",
+                        trigger,
+                    )
+                404 ->
+                    HeartbeatResult.error(
+                        "Device not found",
+                        "The device may have been deleted",
+                        trigger,
+                    )
+                429 ->
+                    HeartbeatResult.error(
+                        "Rate limited",
+                        "Will retry on next scheduled heartbeat",
+                        trigger,
+                    )
+                else ->
+                    HeartbeatResult.error(
+                        "Server error (${response.status.value})",
+                        "Will retry on next scheduled heartbeat",
+                        trigger,
+                    )
             }
         } catch (e: CancellationException) {
             throw e
@@ -71,10 +79,11 @@ class HeartbeatClient(
     }
 
     companion object {
-        fun defaultClient(): HttpClient = HttpClient {
-            install(ContentNegotiation) {
-                json(Json { ignoreUnknownKeys = true })
+        fun defaultClient(): HttpClient =
+            HttpClient {
+                install(ContentNegotiation) {
+                    json(Json { ignoreUnknownKeys = true })
+                }
             }
-        }
     }
 }
