@@ -19,6 +19,7 @@ import com.pulseweaver.heartbeat.service.HeartbeatUtils
 import com.pulseweaver.heartbeat.ui.AuthGate
 import com.pulseweaver.heartbeat.ui.HeartbeatScreen
 import com.pulseweaver.heartbeat.ui.SetupScreen
+import com.pulseweaver.heartbeat.ui.SystemAppearance
 
 // Navy depth Theme  ────────────────────────────────────────
 // Dark: deep navy background + slightly lighter card surfaces (rich, not flat).
@@ -82,6 +83,7 @@ fun App(
     val useDark = HeartbeatUtils.shouldUseDarkTheme(themeMode, systemIsDark)
 
     MaterialTheme(colorScheme = if (useDark) IndigoDark else IndigoLight) {
+        SystemAppearance(darkTheme = useDark)
         when (screenState) {
             ScreenState.Loading -> { /* blank while config loads — avoids setup/main flash */ }
             ScreenState.Setup ->

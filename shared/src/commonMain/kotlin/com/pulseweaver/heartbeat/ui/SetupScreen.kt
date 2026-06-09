@@ -1,8 +1,6 @@
 package com.pulseweaver.heartbeat.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -38,8 +35,6 @@ import com.pulseweaver.heartbeat.service.RegistrationClient
 import com.pulseweaver.heartbeat.service.RegistrationResult
 import kotlinx.coroutines.launch
 
-private val Amber = Color(0xFFFFA94D)
-
 @Composable
 fun SetupScreen(
     onProvisioningComplete: (HeartbeatConfig) -> Unit,
@@ -63,17 +58,12 @@ fun SetupScreen(
         verticalArrangement = Arrangement.Center,
     ) {
         // Branding
-        Box(
-            modifier =
-                Modifier
-                    .size(10.dp)
-                    .background(Amber, CircleShape),
-        )
-        Spacer(Modifier.height(12.dp))
+        BrandMark(size = 72.dp)
+        Spacer(Modifier.height(16.dp))
         Text(
             text =
                 buildAnnotatedString {
-                    withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) {
+                    withStyle(SpanStyle(color = AppColors.Amber, fontWeight = FontWeight.Bold)) {
                         append("Pulse")
                     }
                     withStyle(SpanStyle(fontWeight = FontWeight.Normal)) {

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  HexBolt mark in the 108×108dp adaptive-icon space. The 72dp active area is
-  inset 18dp on each side; scaled from the 64×64 SVG source (72/64 = 1.125).
+  Monochrome HexBolt mark for themed icons. Same geometry as the foreground,
+  drawn in a single colour so the launcher can tint it from the system theme.
+  Alpha tiers are preserved to keep the nested-ring depth.
 -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
@@ -12,7 +13,7 @@
     <!-- Outer hex ring -->
     <path
         android:pathData="M 54,22.5 L 81.28,38.25 L 81.28,69.75 L 54,85.5 L 26.72,69.75 L 26.72,38.25 Z"
-        android:strokeColor="#FFFFFF"
+        android:strokeColor="#FFFFFFFF"
         android:strokeWidth="1.58"
         android:fillColor="#00000000" />
 
@@ -62,8 +63,8 @@
         android:strokeWidth="1.58"
         android:fillColor="#00000000" />
 
-    <!-- Lightning bolt (#FFA94D) -->
+    <!-- Lightning bolt -->
     <path
         android:pathData="M 63,29.25 L 33.75,56.25 L 47.25,56.25 L 45,76.5 L 74.25,51.75 L 56.25,51.75 Z"
-        android:fillColor="#FFA94D" />
+        android:fillColor="#FFFFFFFF" />
 </vector>

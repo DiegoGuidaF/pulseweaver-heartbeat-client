@@ -1,19 +1,6 @@
 package com.pulseweaver.heartbeat.ui
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.EaseOut
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +10,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -35,9 +21,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -53,15 +37,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.config.ConfigStore
@@ -85,11 +65,7 @@ import kotlin.time.TimeSource
 private val INTERVAL_SECONDS = listOf(60, 300, 900, 1800, 3600)
 private val INTERVAL_LABELS = listOf("1m", "5m", "15m", "30m", "1h")
 
-// Amber = liveness/pulse, Indigo (primary) = action/structure — per style guide.
-private val Amber = Color(0xFFFFA94D)
-private val StoppedGrey = Color(0xFF9E9E9E)
-private val ErrorRed = Color(0xFFFA5252)
-private val WarningYellow = Color(0xFFFCC419)
+// Indigo (primary) = action/structure, Amber = liveness/pulse — per style guide.
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -230,17 +206,11 @@ fun HeartbeatScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        // Small amber pulse dot
-                        Box(
-                            modifier =
-                                Modifier
-                                    .size(8.dp)
-                                    .background(Amber, CircleShape),
-                        )
+                        BrandMark(size = 24.dp)
                         Text(
                             text =
                                 buildAnnotatedString {
-                                    withStyle(SpanStyle(color = Amber, fontWeight = FontWeight.Bold)) {
+                                    withStyle(SpanStyle(color = AppColors.Amber, fontWeight = FontWeight.Bold)) {
                                         append("Pulse")
                                     }
                                     withStyle(SpanStyle(fontWeight = FontWeight.Normal)) {
@@ -504,279 +474,4 @@ fun HeartbeatScreen(
     }
 }
 
-@Composable
-private fun StatusHero(
-    enabled: Boolean,
-    lastResult: HeartbeatResult?,
-    lastResultTime: String,
-    elapsedDisplay: String,
-    nextInDisplay: String,
-    isSending: Boolean = false,
-    isConfigValid: Boolean = false,
-    onTap: () -> Unit = {},
-) {
-    val statusColor =
-        when {
-            !enabled -> StoppedGrey
-            lastResult?.success == false -> ErrorRed
-            else -> Amber
-        }
-
-    // Pulsing ripple — only computed and running when active and healthy
-    val showPulse = enabled && lastResult?.success != false
-    val pulseScale: Float
-    val pulseAlpha: Float
-    if (showPulse) {
-        val infiniteTransition = rememberInfiniteTransition(label = "pulse")
-        pulseScale =
-            infiniteTransition
-                .animateFloat(
-                    initialValue = 1f,
-                    targetValue = 1.8f,
-                    animationSpec = infiniteRepeatable(tween(2400, easing = EaseOut), RepeatMode.Restart),
-                    label = "pulseScale",
-                ).value
-        pulseAlpha =
-            infiniteTransition
-                .animateFloat(
-                    initialValue = 0.5f,
-                    targetValue = 0f,
-                    animationSpec = infiniteRepeatable(tween(2400, easing = LinearEasing), RepeatMode.Restart),
-                    label = "pulseAlpha",
-                ).value
-    } else {
-        pulseScale = 1f
-        pulseAlpha = 0f
-    }
-
-    val canTap = isConfigValid && !isSending
-
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp).testTag(TestTags.STATUS_HERO),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier =
-                Modifier
-                    .clickable(enabled = canTap) { onTap() },
-        ) {
-            // Ripple ring
-            if (showPulse) {
-                Box(
-                    modifier =
-                        Modifier
-                            .size(72.dp)
-                            .scale(pulseScale)
-                            .background(statusColor.copy(alpha = pulseAlpha), CircleShape),
-                )
-            }
-            // Status circle
-            Surface(
-                shape = CircleShape,
-                color = statusColor,
-                shadowElevation = 4.dp,
-                modifier = Modifier.size(72.dp),
-            ) {
-                if (isSending) {
-                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-                        CircularProgressIndicator(
-                            color = Color.White,
-                            strokeWidth = 2.dp,
-                            modifier = Modifier.size(24.dp),
-                        )
-                    }
-                }
-            }
-        }
-
-        Text(
-            text =
-                when {
-                    isSending -> "Sending…"
-                    !enabled -> "Stopped"
-                    lastResult?.success == false -> "Error"
-                    else -> "Active"
-                },
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.SemiBold,
-            color = statusColor,
-            modifier = Modifier.testTag(TestTags.STATUS_LABEL),
-        )
-
-        if (isConfigValid) {
-            Text(
-                text = "Tap to send now",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        if (enabled && lastResult?.ip != null) {
-            Text(
-                text = "IP: ${lastResult.ip}",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        if (lastResultTime.isNotEmpty()) {
-            val elapsedSuffix = if (elapsedDisplay.isNotEmpty()) " ($elapsedDisplay)" else ""
-            Text(
-                text =
-                    if (nextInDisplay.isNotEmpty()) {
-                        "Next in $nextInDisplay · Last $lastResultTime$elapsedSuffix"
-                    } else {
-                        "Last sent $lastResultTime$elapsedSuffix"
-                    },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun LastResultRow(
-    modifier: Modifier = Modifier,
-    lastResult: HeartbeatResult,
-    lastResultTime: String,
-    elapsedDisplay: String,
-    nextInDisplay: String,
-) {
-    val resultColor =
-        when {
-            lastResult.success -> Amber
-            lastResult.message.contains("limited", ignoreCase = true) -> WarningYellow
-            else -> ErrorRed
-        }
-
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            "Last response",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(2.dp))
-        Text(
-            text = lastResult.message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = resultColor,
-        )
-        if (lastResultTime.isNotEmpty()) {
-            val elapsedSuffix = if (elapsedDisplay.isNotEmpty()) " ($elapsedDisplay)" else ""
-            Text(
-                text = "at $lastResultTime$elapsedSuffix  ·  trigger: ${lastResult.trigger}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (lastResult.hint != null) {
-            Text(text = lastResult.hint, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}
-
 private fun formatDuration(totalSeconds: Long): String = HeartbeatUtils.formatDuration(totalSeconds)
-
-@Composable
-private fun ConnectionCard(
-    config: HeartbeatConfig,
-    expanded: Boolean,
-    isConfigValid: Boolean,
-    showSaved: Boolean,
-    isApiKeyVisible: Boolean,
-    locked: Boolean,
-    onExpandToggle: () -> Unit,
-    onServerUrlChange: (String) -> Unit,
-    onApiKeyChange: (String) -> Unit,
-    onApiKeyVisibilityToggle: () -> Unit,
-    onEnterSetupCode: () -> Unit,
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.CONNECTION_CARD),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-    ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
-            // Header row — always visible, tappable when configured
-            Row(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .then(if (isConfigValid) Modifier.clickable { onExpandToggle() } else Modifier),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Connection", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    AnimatedVisibility(visible = showSaved, enter = fadeIn(tween(200)), exit = fadeOut(tween(600))) {
-                        Text("Saved ✓", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    }
-                    Text(
-                        text = "Enter a setup code",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable(onClick = onEnterSetupCode),
-                    )
-                    if (isConfigValid) {
-                        Text(
-                            text = if (expanded) "▲" else "▼",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            // Collapsed summary — URL only, no editing
-            if (isConfigValid && !expanded) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = config.serverUrl,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            // Expanded fields
-            AnimatedVisibility(visible = expanded) {
-                Column(
-                    modifier = Modifier.padding(top = 12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    OutlinedTextField(
-                        value = config.serverUrl,
-                        onValueChange = onServerUrlChange,
-                        label = { Text("Server URL") },
-                        placeholder = { Text("https://server.example.com") },
-                        singleLine = true,
-                        enabled = !locked,
-                        modifier = Modifier.fillMaxWidth().testTag(TestTags.SERVER_URL_FIELD),
-                    )
-                    if (!locked) {
-                        OutlinedTextField(
-                            value = config.apiKey,
-                            onValueChange = onApiKeyChange,
-                            label = { Text("API Key") },
-                            singleLine = true,
-                            visualTransformation = if (isApiKeyVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                TextButton(onClick = onApiKeyVisibilityToggle) {
-                                    Text(if (isApiKeyVisible) "Hide" else "Show")
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth().testTag(TestTags.API_KEY_FIELD),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
