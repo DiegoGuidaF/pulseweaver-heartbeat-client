@@ -1,6 +1,5 @@
 package com.pulseweaver.heartbeat.config
 
-import com.pulseweaver.heartbeat.config.HeartbeatConfig
 import java.util.prefs.Preferences
 
 private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat")
