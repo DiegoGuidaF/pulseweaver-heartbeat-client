@@ -15,9 +15,15 @@ class HeartbeatWorker(
     override suspend fun doWork(): Result {
         val config = ConfigStore().load()
         if (!config.enabled) return Result.success()
-        val result = HeartbeatClient().send(config, "background_worker")
+        val reason = inputData.getString(KEY_REASON) ?: DEFAULT_REASON
+        val result = HeartbeatClient().send(config, reason)
         ResultStore().save(result, currentTimeForDisplay(), currentEpochMs())
         // Always return success — heartbeat failures are non-fatal background events
         return Result.success()
+    }
+
+    companion object {
+        const val KEY_REASON = "reason"
+        private const val DEFAULT_REASON = "background_worker"
     }
 }

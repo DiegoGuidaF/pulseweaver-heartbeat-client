@@ -1,5 +1,6 @@
 package com.pulseweaver.heartbeat.platform
 
+import android.annotation.SuppressLint
 import android.net.ConnectivityManager
 import android.net.Network
 import androidx.core.content.getSystemService
@@ -8,6 +9,8 @@ import com.pulseweaver.heartbeat.ApplicationContextHolder
 actual class NetworkMonitor actual constructor() {
     private var callback: ConnectivityManager.NetworkCallback? = null
 
+    // ACCESS_NETWORK_STATE is declared in the app manifest; lint cannot see it from this library module.
+    @SuppressLint("MissingPermission")
     actual fun startMonitoring(onNetworkChange: () -> Unit) {
         val cm =
             ApplicationContextHolder.context.getSystemService<ConnectivityManager>()

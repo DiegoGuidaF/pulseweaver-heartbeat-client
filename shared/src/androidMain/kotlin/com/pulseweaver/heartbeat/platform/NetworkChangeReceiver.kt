@@ -8,24 +8,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-class BootReceiver : BroadcastReceiver() {
+// Invoked by the system via PendingIntent whenever the set of internet-capable networks changes
+// (e.g. Wi-Fi <-> cellular). Wakes the app to refresh the heartbeat so the server sees the new
+// public IP promptly, even when the process was not running.
+class NetworkChangeReceiver : BroadcastReceiver() {
     override fun onReceive(
         context: Context,
         intent: Intent,
     ) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED &&
-            intent.action != Intent.ACTION_MY_PACKAGE_REPLACED
-        ) {
-            return
-        }
-
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val config = ConfigStore().load()
-                if (config.enabled) {
-                    enqueueHeartbeatWork(context, config.intervalSeconds)
-                    registerNetworkChangeCallback(context)
+                if (ConfigStore().load().enabled) {
+                    enqueueNetworkChangeHeartbeat(context)
                 }
             } finally {
                 pendingResult.finish()

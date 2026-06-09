@@ -1,13 +1,8 @@
 package com.pulseweaver.heartbeat
 
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.os.PowerManager
-import android.provider.Settings
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.content.getSystemService
 import androidx.fragment.app.FragmentActivity
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 
@@ -29,22 +24,11 @@ class MainActivity : FragmentActivity() {
     override fun onResume() {
         super.onResume()
         ActivityHolder.set(this)
-        promptDisableBatteryOptimization()
     }
 
     override fun onPause() {
         super.onPause()
         ActivityHolder.clear()
-    }
-
-    private fun promptDisableBatteryOptimization() {
-        val pm = getSystemService<PowerManager>() ?: return
-        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                data = Uri.parse("package:$packageName")
-            }
-            startActivity(intent)
-        }
     }
 }
 
