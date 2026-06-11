@@ -47,4 +47,29 @@ class HeartbeatConfigTest {
         val b = HeartbeatConfig(themeMode = ThemeMode.DARK)
         assertNotEquals(a, b)
     }
+
+    @Test
+    fun defaultIntervalIsTheFloor() {
+        assertEquals(MIN_INTERVAL_SECONDS, HeartbeatConfig().intervalSeconds)
+    }
+
+    @Test
+    fun normalizeIntervalRaisesLegacyValuesToTheFloor() {
+        assertEquals(MIN_INTERVAL_SECONDS, normalizeInterval(60))
+        assertEquals(MIN_INTERVAL_SECONDS, normalizeInterval(300))
+        assertEquals(MIN_INTERVAL_SECONDS, normalizeInterval(MIN_INTERVAL_SECONDS - 1))
+    }
+
+    @Test
+    fun normalizeIntervalCapsAboveCeiling() {
+        assertEquals(MAX_INTERVAL_SECONDS, normalizeInterval(MAX_INTERVAL_SECONDS + 1))
+        assertEquals(MAX_INTERVAL_SECONDS, normalizeInterval(Int.MAX_VALUE))
+    }
+
+    @Test
+    fun normalizeIntervalLeavesInRangeValuesUnchanged() {
+        assertEquals(MIN_INTERVAL_SECONDS, normalizeInterval(MIN_INTERVAL_SECONDS))
+        assertEquals(3600, normalizeInterval(3600))
+        assertEquals(MAX_INTERVAL_SECONDS, normalizeInterval(MAX_INTERVAL_SECONDS))
+    }
 }

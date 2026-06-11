@@ -49,6 +49,7 @@ import com.pulseweaver.heartbeat.config.HeartbeatConfig
 import com.pulseweaver.heartbeat.config.ResultStore
 import com.pulseweaver.heartbeat.config.ThemeMode
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
+import com.pulseweaver.heartbeat.platform.BatteryOptimization
 import com.pulseweaver.heartbeat.platform.BiometricAuth
 import com.pulseweaver.heartbeat.platform.NetworkMonitor
 import com.pulseweaver.heartbeat.platform.UrlOpener
@@ -59,11 +60,12 @@ import com.pulseweaver.heartbeat.service.HeartbeatClient
 import com.pulseweaver.heartbeat.service.HeartbeatResult
 import com.pulseweaver.heartbeat.service.HeartbeatUtils
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlin.time.TimeSource
 
-private val INTERVAL_SECONDS = listOf(60, 300, 900, 1800, 3600)
-private val INTERVAL_LABELS = listOf("1m", "5m", "15m", "30m", "1h")
+private val INTERVAL_SECONDS = listOf(900, 1800, 3600, 21600, 86400)
+private val INTERVAL_LABELS = listOf("15m", "30m", "1h", "6h", "1d")
 
 // Indigo (primary) = action/structure, Amber = liveness/pulse — per style guide.
 
@@ -97,6 +99,9 @@ fun HeartbeatScreen(
     var showReRegisterDialog by remember { mutableStateOf(false) }
     // Expanded by default for first-run; collapsed once the config is valid.
     var connectionExpanded by remember { mutableStateOf(true) }
+    // Android-only: true once the app is exempt from battery optimization. Starts true on
+    // desktop/iOS so the reliability surface never appears there.
+    var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt()) }
 
     val coroutineScope = rememberCoroutineScope()
     val client = remember { HeartbeatClient() }
@@ -188,6 +193,30 @@ fun HeartbeatScreen(
         scheduler.schedulePeriodicHeartbeat(config.intervalSeconds) { sendHeartbeat("scheduled") }
     }
 
+    // Observe ResultStore so background (WorkManager) heartbeats refresh the open UI. The first
+    // emission is the value already shown via the initial load, so it's dropped; each later write
+    // updates the result and restarts the countdown. No-op past the first emission on desktop/iOS.
+    LaunchedEffect(isLoaded) {
+        if (!isLoaded) return@LaunchedEffect
+        resultStore.observe().drop(1).collect { state ->
+            if (state == null) return@collect
+            lastResult = state.result
+            lastResultTime = state.time
+            lastResultEpochMs = state.epochMs
+            lastResultMark = TimeSource.Monotonic.markNow()
+            onLastResultChange(state.result)
+        }
+    }
+
+    // Re-check the battery-optimization exemption until granted, so the reliability card disappears
+    // shortly after the user returns from the system dialog. Inert on desktop/iOS (starts exempt).
+    LaunchedEffect(Unit) {
+        while (!batteryExempt) {
+            delay(1_000)
+            batteryExempt = BatteryOptimization.isExempt()
+        }
+    }
+
     DisposableEffect(Unit) {
         onDispose {
             scheduler.cancelHeartbeat()
@@ -249,6 +278,13 @@ fun HeartbeatScreen(
                 isConfigValid = isConfigValid,
                 onTap = { coroutineScope.launch { sendHeartbeat("manual") } },
             )
+
+            // ── Background reliability (Android, until exempt) ─────────────
+            if (!batteryExempt) {
+                BackgroundReliabilityCard(
+                    onAllow = { BatteryOptimization.requestExemption() },
+                )
+            }
 
             // ── Connection card — hidden until config is loaded to avoid flash ──
             if (isLoaded) {
@@ -461,14 +497,29 @@ fun HeartbeatScreen(
                     }
                 }
             }
+        }
+    }
+}
 
-            // ── Background limit hint (mobile only) ────────────────────────
-            if (platformHasBackgroundLimit) {
-                Text(
-                    text = "ⓘ Background heartbeat minimum is 15 min on mobile.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+// Shown on Android until the app is exempt from battery optimization. Explains why background
+// heartbeats can be delayed and offers the user-initiated button that opens the system dialog.
+@Composable
+private fun BackgroundReliabilityCard(onAllow: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth().testTag(TestTags.RELIABILITY_CARD),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Background activity", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Android pauses background apps to save battery, which can delay your heartbeat by " +
+                    "hours and let this device's access expire. Allow background activity to keep it " +
+                    "authorized while your phone sleeps.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(onClick = onAllow, modifier = Modifier.testTag(TestTags.RELIABILITY_ALLOW_BUTTON)) {
+                Text("Allow background activity")
             }
         }
     }

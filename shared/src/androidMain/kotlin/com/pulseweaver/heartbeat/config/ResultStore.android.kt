@@ -10,7 +10,9 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.pulseweaver.heartbeat.ApplicationContextHolder
 import com.pulseweaver.heartbeat.service.HeartbeatResult
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 private val Context.resultDataStore: DataStore<Preferences> by preferencesDataStore(
     name = "heartbeat_result",
@@ -19,20 +21,23 @@ private val Context.resultDataStore: DataStore<Preferences> by preferencesDataSt
 actual class ResultStore actual constructor() {
     private val ds get() = ApplicationContextHolder.context.resultDataStore
 
-    actual suspend fun load(): LastHeartbeatState? {
-        val prefs = ds.data.first()
-        val success = prefs[Keys.SUCCESS] ?: return null
+    actual suspend fun load(): LastHeartbeatState? = ds.data.first().toState()
+
+    actual fun observe(): Flow<LastHeartbeatState?> = ds.data.map { it.toState() }
+
+    private fun Preferences.toState(): LastHeartbeatState? {
+        val success = this[Keys.SUCCESS] ?: return null
         return LastHeartbeatState(
             result =
                 HeartbeatResult(
                     success = success,
-                    message = prefs[Keys.MESSAGE] ?: "",
-                    hint = prefs[Keys.HINT],
-                    ip = prefs[Keys.IP],
-                    trigger = prefs[Keys.TRIGGER] ?: "",
+                    message = this[Keys.MESSAGE] ?: "",
+                    hint = this[Keys.HINT],
+                    ip = this[Keys.IP],
+                    trigger = this[Keys.TRIGGER] ?: "",
                 ),
-            time = prefs[Keys.TIME] ?: "",
-            epochMs = prefs[Keys.EPOCH_MS] ?: 0L,
+            time = this[Keys.TIME] ?: "",
+            epochMs = this[Keys.EPOCH_MS] ?: 0L,
         )
     }
 

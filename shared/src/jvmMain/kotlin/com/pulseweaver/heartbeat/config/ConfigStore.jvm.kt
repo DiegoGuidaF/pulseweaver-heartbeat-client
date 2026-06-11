@@ -9,7 +9,7 @@ actual class ConfigStore actual constructor() {
         HeartbeatConfig(
             serverUrl = prefs.get("serverUrl", ""),
             apiKey = prefs.get("apiKey", ""),
-            intervalSeconds = prefs.getInt("intervalSeconds", 900),
+            intervalSeconds = normalizeInterval(prefs.getInt("intervalSeconds", MIN_INTERVAL_SECONDS)),
             enabled = prefs.getBoolean("enabled", false),
             biometricEnabled = false, // not applicable on desktop
             themeMode =

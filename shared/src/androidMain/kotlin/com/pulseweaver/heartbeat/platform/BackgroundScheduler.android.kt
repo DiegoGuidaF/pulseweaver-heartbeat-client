@@ -19,13 +19,6 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.pulseweaver.heartbeat.service.HeartbeatWorker
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 private const val WORK_NAME = "heartbeat"
@@ -125,31 +118,18 @@ private fun networkChangePendingIntent(
 actual class BackgroundScheduler(
     private val context: Context,
 ) {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private var foregroundJob: Job? = null
-
+    // Android ticks come solely from WorkManager (and the network-change callback); the 15-minute
+    // floor means an in-process foreground timer would only duplicate it. The open UI stays in sync
+    // by observing ResultStore. onTick is unused here — it drives the desktop coroutine scheduler.
     actual fun schedulePeriodicHeartbeat(
         intervalSeconds: Int,
         onTick: suspend () -> Unit,
     ) {
-        // Foreground coroutine: fires at the requested interval while the app process is alive.
-        // This allows sub-15-minute intervals when the app is in the foreground.
-        foregroundJob?.cancel()
-        foregroundJob =
-            scope.launch {
-                while (isActive) {
-                    delay(intervalSeconds * 1000L)
-                    if (isActive) onTick()
-                }
-            }
-
         enqueueHeartbeatWork(context, intervalSeconds)
         registerNetworkChangeCallback(context)
     }
 
     actual fun cancelHeartbeat() {
-        foregroundJob?.cancel()
-        foregroundJob = null
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
         unregisterNetworkChangeCallback(context)
     }

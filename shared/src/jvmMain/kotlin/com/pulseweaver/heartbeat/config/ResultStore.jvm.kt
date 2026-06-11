@@ -1,11 +1,16 @@
 package com.pulseweaver.heartbeat.config
 
 import com.pulseweaver.heartbeat.service.HeartbeatResult
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.util.prefs.Preferences
 
 private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat/result")
 
 actual class ResultStore actual constructor() {
+    // The desktop UI is driven directly by the in-process scheduler, so a single emission is enough.
+    actual fun observe(): Flow<LastHeartbeatState?> = flow { emit(load()) }
+
     actual suspend fun load(): LastHeartbeatState? {
         val success = prefs.get("success", null) ?: return null
         return LastHeartbeatState(

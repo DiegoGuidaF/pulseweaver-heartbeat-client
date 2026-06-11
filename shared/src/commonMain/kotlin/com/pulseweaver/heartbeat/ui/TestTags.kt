@@ -16,6 +16,8 @@ object TestTags {
     const val CONNECTION_CARD = "connection_card"
     const val SCHEDULE_CARD = "schedule_card"
     const val APPEARANCE_CARD = "appearance_card"
+    const val RELIABILITY_CARD = "reliability_card"
+    const val RELIABILITY_ALLOW_BUTTON = "reliability_allow_button"
     const val THEME_CHIP_AUTO = "theme_chip_auto"
     const val THEME_CHIP_LIGHT = "theme_chip_light"
     const val THEME_CHIP_DARK = "theme_chip_dark"

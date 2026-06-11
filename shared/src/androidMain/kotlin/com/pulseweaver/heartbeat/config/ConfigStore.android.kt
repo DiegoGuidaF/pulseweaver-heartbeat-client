@@ -26,7 +26,7 @@ actual class ConfigStore actual constructor() {
         return HeartbeatConfig(
             serverUrl = prefs[Keys.SERVER_URL] ?: "",
             apiKey = prefs[Keys.API_KEY] ?: "",
-            intervalSeconds = prefs[Keys.INTERVAL_SECONDS] ?: 900,
+            intervalSeconds = normalizeInterval(prefs[Keys.INTERVAL_SECONDS] ?: MIN_INTERVAL_SECONDS),
             enabled = prefs[Keys.ENABLED] ?: false,
             biometricEnabled = prefs[Keys.BIOMETRIC_ENABLED] ?: false,
             themeMode =

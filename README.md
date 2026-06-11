@@ -37,6 +37,15 @@ Download the latest release from [GitHub Releases](https://github.com/DiegoGuida
 
 → [Full documentation — features, screenshots, building from source](docs/app.md)
 
+### Interval & address TTL (Android)
+
+The app sends a heartbeat at least every chosen interval (15 min – 1 day), but Android batches background work to save battery, so the actual delivery can slip — especially on a phone that hasn't been opened in a while. Two things keep a device authorized despite that slack:
+
+- **Allow background activity** when the app prompts you. This exempts it from Android's battery optimization (Doze / App Standby), so the schedule runs roughly on time instead of being deferred for hours.
+- **Set the server's `addressTTL` to ~8× the interval.** A 15 min heartbeat pairs with a ~2 h TTL: the address stays enabled across a couple of missed background windows, while a genuinely offline device still expires.
+
+For admins: a device whose addresses keep expiring — and the max-enabled-addresses rule — are your signal that something is actually wrong, not just a normal Doze delay.
+
 ---
 
 ## 🐳 Docker
