@@ -7,7 +7,7 @@
 
 Keep your devices' current address enabled on your [PulseWeaver](https://github.com/DiegoGuidaF/PulseWeaver) server — automatically.
 
-PulseWeaver is a self-hosted, IP-based dynamic firewall. For an IP to stay allowed, a device must send periodic heartbeats to prove it's still active. This repository provides three ways to do that.
+PulseWeaver is a self-hosted forward-auth gate for reverse proxies — per-user, IP-based access control over which devices reach which services. For a device's IP to stay allowed, it must send periodic heartbeats to prove it's still active. This repository provides three ways to do that.
 
 ## Which setup?
 
