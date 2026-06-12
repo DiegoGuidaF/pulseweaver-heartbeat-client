@@ -61,8 +61,6 @@ Kotlin Multiplatform with Compose Multiplatform UI. Two Gradle modules:
 
 ## Conventions
 
-**Pattern library:** Before implementing any feature, read `docs/patterns/_index.md` and load every pattern that applies. After implementing, follow the [pattern maintenance protocol](../project/workflow/WORKFLOW.md#pattern-maintenance).
-
 - **expect/actual** for platform abstractions — keep `commonMain` as the default working location
 - Tests use Ktor `MockEngine` for HTTP and `compose-ui-test` for UI
 - Keep the app simple: one feature (heartbeat), minimal surface area
