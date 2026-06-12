@@ -267,3 +267,4 @@ jobs:
             PulseWeaver-Heartbeat-*-windows.msi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
