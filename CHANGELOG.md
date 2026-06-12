@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.2.1] - 2026-06-11
+## [1.2.1] - 2026-06-12
 
 ### Bug Fixes
 
@@ -10,21 +10,17 @@ All notable changes to this project will be documented in this file.
 - *(android)* Use white adaptive icon background ([`0321b20`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/0321b20c2884d8f1512a958eefa931778f89d291))
 - *(android)* Switch adaptive icon to dark-variant mark for white background ([`c9d4709`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/c9d47099d96a1fa56fa2f13400a7c62c55971d4d))
 
-### Documentation
-
-- *(android)* Add emulator validation pattern ([`561b47d`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/561b47d24eda2fd006fab8f7e1302b02d8102e96))
-
 ### Features
 
-- *(android)* Trigger heartbeat on network change ([`641ff77`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/641ff77079b4cb521a78ff9d14f0ac2e28408a6f))
+- *(android)* Improvements to background process handling periodic heartbeat
 - *(ui)* HexBolt BrandMark, AppColors, monochrome icon, themed system bars ([`ee41501`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/ee41501bed564516711edb43a8ca1adcdc308e73))
-- *(android)* Keep background heartbeat alive in Doze via battery-optimization exemption ([`db97336`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/db973365f9b4dc3d68ad2bb98f83ed0660287474))
+- Limit heartbeat minimum to 15minutes since less than that is too quick, keep it simple.
 
 ### Miscellaneous
 
 - Apply formatting via KTLint ([`db23a3d`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/db23a3d9894702a6eea7acd2d37ac27ad0b6a44c))
 - Remove deprecated option from gradle options and place it on appropiate android gradle ([`d8769e0`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/d8769e01d474decec2de197031174fc9d7d70a5d))
-- *(shared)* Remove redundant same-package imports from ConfigStore ([`778baf1`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/778baf1f9b02850ef97a986f373153448dbe42e2))
+- Remove unneeded documentation from repo ([`b4a7d64`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/b4a7d646896a8354c8d859fdd91271289bce22d6))
 
 ## [1.2.0] - 2026-06-02
 
