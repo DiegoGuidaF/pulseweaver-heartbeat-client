@@ -102,6 +102,9 @@ fun HeartbeatScreen(
     // Android-only: true once the app is exempt from battery optimization. Starts true on
     // desktop/iOS so the reliability surface never appears there.
     var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt()) }
+    // Dismissing the exemption modal hides it for this session; it reappears next launch while
+    // still unexempt, so the prompt stays prominent without nagging mid-session.
+    var reliabilityDismissed by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val client = remember { HeartbeatClient() }
@@ -208,7 +211,7 @@ fun HeartbeatScreen(
         }
     }
 
-    // Re-check the battery-optimization exemption until granted, so the reliability card disappears
+    // Re-check the battery-optimization exemption until granted, so the reliability modal disappears
     // shortly after the user returns from the system dialog. Inert on desktop/iOS (starts exempt).
     LaunchedEffect(Unit) {
         while (!batteryExempt) {
@@ -280,9 +283,33 @@ fun HeartbeatScreen(
             )
 
             // ── Background reliability (Android, until exempt) ─────────────
-            if (!batteryExempt) {
-                BackgroundReliabilityCard(
-                    onAllow = { BatteryOptimization.requestExemption() },
+            // A modal rather than an inline card: granting the exemption is what keeps the device
+            // authorized while the phone sleeps, so the request must be prominent, not optional.
+            if (isLoaded && config.enabled && !batteryExempt && !reliabilityDismissed) {
+                AlertDialog(
+                    modifier = Modifier.testTag(TestTags.RELIABILITY_CARD),
+                    onDismissRequest = { reliabilityDismissed = true },
+                    title = { Text("Keep this device authorized") },
+                    text = {
+                        Text(
+                            "Android pauses background apps to save battery, which can delay your " +
+                                "heartbeat by hours and let this device's access expire. Allow " +
+                                "background activity so PulseWeaver can keep it authorized while " +
+                                "your phone sleeps.",
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            modifier = Modifier.testTag(TestTags.RELIABILITY_ALLOW_BUTTON),
+                            onClick = {
+                                BatteryOptimization.requestExemption()
+                                reliabilityDismissed = true
+                            },
+                        ) { Text("Allow") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { reliabilityDismissed = true }) { Text("Not now") }
+                    },
                 )
             }
 
@@ -496,30 +523,6 @@ fun HeartbeatScreen(
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-// Shown on Android until the app is exempt from battery optimization. Explains why background
-// heartbeats can be delayed and offers the user-initiated button that opens the system dialog.
-@Composable
-private fun BackgroundReliabilityCard(onAllow: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().testTag(TestTags.RELIABILITY_CARD),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-    ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Background activity", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
-            Text(
-                "Android pauses background apps to save battery, which can delay your heartbeat by " +
-                    "hours and let this device's access expire. Allow background activity to keep it " +
-                    "authorized while your phone sleeps.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Button(onClick = onAllow, modifier = Modifier.testTag(TestTags.RELIABILITY_ALLOW_BUTTON)) {
-                Text("Allow background activity")
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.pulseweaver.heartbeat.platform
 
 import android.annotation.SuppressLint
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -10,41 +11,64 @@ import android.net.NetworkRequest
 import android.os.Build
 import androidx.core.content.getSystemService
 import androidx.work.Constraints
-import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
-import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.pulseweaver.heartbeat.service.HeartbeatWorker
-import java.util.concurrent.TimeUnit
 
-private const val WORK_NAME = "heartbeat"
+// Legacy unique name of the pre-PW-92 periodic WorkManager schedule. Kept only so it can be
+// cancelled — a request persisted by an older install would otherwise double-fire alongside the
+// alarm chain after an app upgrade.
+private const val LEGACY_PERIODIC_WORK_NAME = "heartbeat"
 private const val NETWORK_CHANGE_WORK_NAME = "heartbeat_network_change"
 private const val NETWORK_CALLBACK_REQUEST_CODE = 1001
+private const val HEARTBEAT_ALARM_REQUEST_CODE = 1002
 
-// Android enforces a 15-minute minimum for PeriodicWorkRequest
-private const val ANDROID_MIN_INTERVAL_SECONDS = 15 * 60L
-
-// Called from both BackgroundScheduler and BootReceiver to avoid duplicating WorkManager setup.
-internal fun enqueueHeartbeatWork(
+// Arms (or re-arms) the self-rescheduling heartbeat alarm. AlarmManager's allow-while-idle alarms
+// fire during Doze — unlike WorkManager/JobScheduler work — so this is what keeps an idle phone
+// beating. The alarm is one-shot; HeartbeatAlarmReceiver schedules the next one after each send.
+// Called from BackgroundScheduler, BootReceiver, and the receiver itself (alarms don't survive
+// reboot or force-stop, so the chain is re-established on app start and on boot).
+internal fun scheduleHeartbeatAlarm(
     context: Context,
     intervalSeconds: Int,
 ) {
-    val bgInterval = maxOf(intervalSeconds.toLong(), ANDROID_MIN_INTERVAL_SECONDS)
-    val request =
-        PeriodicWorkRequestBuilder<HeartbeatWorker>(bgInterval, TimeUnit.SECONDS)
-            .setConstraints(
-                Constraints
-                    .Builder()
-                    .setRequiredNetworkType(NetworkType.CONNECTED)
-                    .build(),
-            ).build()
-    WorkManager
-        .getInstance(context)
-        .enqueueUniquePeriodicWork(WORK_NAME, ExistingPeriodicWorkPolicy.UPDATE, request)
+    // Evict any periodic schedule left by a pre-alarm install so it can't fire in parallel.
+    WorkManager.getInstance(context).cancelUniqueWork(LEGACY_PERIODIC_WORK_NAME)
+
+    val alarmManager = context.getSystemService<AlarmManager>() ?: return
+    val triggerAtMillis = System.currentTimeMillis() + intervalSeconds * 1000L
+    // Inexact (the OS may coalesce and enforces a ~9-min floor while idle), which is fine for a
+    // >=15-min heartbeat and needs no exact-alarm permission.
+    alarmManager.setAndAllowWhileIdle(
+        AlarmManager.RTC_WAKEUP,
+        triggerAtMillis,
+        heartbeatAlarmPendingIntent(context),
+    )
+}
+
+internal fun cancelHeartbeatAlarm(context: Context) {
+    WorkManager.getInstance(context).cancelUniqueWork(LEGACY_PERIODIC_WORK_NAME)
+    val alarmManager = context.getSystemService<AlarmManager>() ?: return
+    alarmManager.cancel(heartbeatAlarmPendingIntent(context))
+}
+
+// Stable request code + immutable PendingIntent: re-arming replaces the pending alarm rather than
+// stacking. The receiver needs no extras — it reads config fresh on each fire.
+private fun heartbeatAlarmPendingIntent(context: Context): PendingIntent {
+    val intent =
+        Intent(context, HeartbeatAlarmReceiver::class.java).apply {
+            action = HeartbeatAlarmReceiver.ACTION_HEARTBEAT_ALARM
+        }
+    return PendingIntent.getBroadcast(
+        context,
+        HEARTBEAT_ALARM_REQUEST_CODE,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+    )
 }
 
 // One-shot expedited heartbeat fired when connectivity changes. Unique + REPLACE collapses a
@@ -118,19 +142,19 @@ private fun networkChangePendingIntent(
 actual class BackgroundScheduler(
     private val context: Context,
 ) {
-    // Android ticks come solely from WorkManager (and the network-change callback); the 15-minute
-    // floor means an in-process foreground timer would only duplicate it. The open UI stays in sync
-    // by observing ResultStore. onTick is unused here — it drives the desktop coroutine scheduler.
+    // Android ticks come from the allow-while-idle alarm chain (and the network-change callback).
+    // The open UI stays in sync by observing ResultStore. onTick is unused here — it drives the
+    // desktop coroutine scheduler.
     actual fun schedulePeriodicHeartbeat(
         intervalSeconds: Int,
         onTick: suspend () -> Unit,
     ) {
-        enqueueHeartbeatWork(context, intervalSeconds)
+        scheduleHeartbeatAlarm(context, intervalSeconds)
         registerNetworkChangeCallback(context)
     }
 
     actual fun cancelHeartbeat() {
-        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        cancelHeartbeatAlarm(context)
         unregisterNetworkChangeCallback(context)
     }
 }

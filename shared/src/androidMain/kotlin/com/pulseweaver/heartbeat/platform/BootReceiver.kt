@@ -24,7 +24,7 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 val config = ConfigStore().load()
                 if (config.enabled) {
-                    enqueueHeartbeatWork(context, config.intervalSeconds)
+                    scheduleHeartbeatAlarm(context, config.intervalSeconds)
                     registerNetworkChangeCallback(context)
                 }
             } finally {

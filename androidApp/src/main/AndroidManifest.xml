@@ -39,6 +39,10 @@
         <receiver
             android:name="com.pulseweaver.heartbeat.platform.NetworkChangeReceiver"
             android:exported="false" />
+
+        <receiver
+            android:name="com.pulseweaver.heartbeat.platform.HeartbeatAlarmReceiver"
+            android:exported="false" />
     </application>
 
 </manifest>
