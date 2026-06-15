@@ -53,6 +53,7 @@ kotlin {
             implementation(libs.androidx.work.runtime)
             implementation(libs.androidx.biometric)
             implementation(libs.androidx.datastore.preferences)
+            implementation(libs.gms.code.scanner)
         }
         iosMain.dependencies {
             implementation(libs.ktor.client.darwin)

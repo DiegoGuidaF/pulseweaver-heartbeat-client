@@ -11,6 +11,7 @@ androidx-lifecycle = "2.10.0"
 androidx-work = "2.11.2"
 composeHotReload = "1.1.1"
 composeMultiplatform = "1.11.1"
+gms-code-scanner = "16.1.0"
 kotlin = "2.4.0"
 kotlinx-coroutines = "1.11.0"
 kotlinx-serialization = "1.11.0"
@@ -25,6 +26,7 @@ androidx-fragment = { module = "androidx.fragment:fragment", version.ref = "andr
 androidx-lifecycle-runtimeCompose = { module = "org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidx-lifecycle" }
 androidx-work-runtime = { module = "androidx.work:work-runtime", version.ref = "androidx-work" }
 compose-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
+gms-code-scanner = { module = "com.google.android.gms:play-services-code-scanner", version.ref = "gms-code-scanner" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "composeMultiplatform" }

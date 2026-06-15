@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
+import com.pulseweaver.heartbeat.platform.QrScanner
 import com.pulseweaver.heartbeat.service.RegistrationClient
 import com.pulseweaver.heartbeat.service.RegistrationResult
 import kotlinx.coroutines.launch
@@ -47,6 +49,7 @@ fun SetupScreen(
     val coroutineScope = rememberCoroutineScope()
     val registrationClient = remember { RegistrationClient() }
     val configStore = remember { ConfigStore() }
+    val canScanQr = remember { QrScanner.isAvailable() }
 
     Column(
         modifier =
@@ -102,6 +105,28 @@ fun SetupScreen(
                     .fillMaxWidth()
                     .testTag(TestTags.REGISTRATION_CODE_FIELD),
         )
+
+        if (canScanQr) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = {
+                    coroutineScope.launch {
+                        val scanned = QrScanner.scan()
+                        if (scanned != null) {
+                            code = scanned.trim()
+                            errorMessage = ""
+                        }
+                    }
+                },
+                enabled = !isLoading,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.SCAN_QR_BUTTON),
+            ) {
+                Text("Scan QR code")
+            }
+        }
 
         if (errorMessage.isNotEmpty()) {
             Spacer(Modifier.height(6.dp))
