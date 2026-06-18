@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - 2026-06-18
+
+### Bug Fixes
+
+- *(ci)* Manually set github repo for artifact upload since the folder where this action is run is not part of the repo ([`bee98b3`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/bee98b33aec509196eb36faf5fb4e1c1103a7a66))
+
+### Features
+
+- *(android)* Scan QR pairing code on setup ([`1ae6224`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/1ae6224fd831848d423e06edc3cfea00b1e02961))
+- *(android)*: Improve android background process handling the heartbeat. Now it should properly run each heartbeat even when on background and after restart ([`645a91e4`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/645a91e4202d4f7b4f27debbbd196f153d577359))
+
 ## [1.2.1] - 2026-06-12
 
 ### Bug Fixes
