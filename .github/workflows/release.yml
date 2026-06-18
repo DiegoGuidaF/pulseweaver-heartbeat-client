@@ -99,10 +99,10 @@ jobs:
 
   build-android:
     name: Android APK
-    needs: test
+    needs: [test, create-release]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
@@ -132,17 +132,18 @@ jobs:
           APK=$(find androidApp/build/outputs/apk/release -name '*.apk' | head -1)
           cp "$APK" "PulseWeaver-Heartbeat-${{ github.ref_name }}-android.apk"
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: android-apk
-          path: PulseWeaver-Heartbeat-*-android.apk
+      - name: Upload to release
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-android.apk --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
   build-linux:
     name: Linux packages
-    needs: test
+    needs: [test, create-release]
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
@@ -165,17 +166,18 @@ jobs:
           DEB=$(find shared/build/compose/binaries/main/deb -name '*.deb' | head -1)
           cp "$DEB" "PulseWeaver-Heartbeat-${{ github.ref_name }}-linux-amd64.deb"
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: linux-deb
-          path: PulseWeaver-Heartbeat-*-linux-amd64.deb
+      - name: Upload to release
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-linux-amd64.deb --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
   build-macos:
     name: macOS DMG
-    needs: test
+    needs: [test, create-release]
     runs-on: macos-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
@@ -198,17 +200,18 @@ jobs:
           DMG=$(find shared/build/compose/binaries/main/dmg -name '*.dmg' | head -1)
           cp "$DMG" "PulseWeaver-Heartbeat-${{ github.ref_name }}-macos.dmg"
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: macos-dmg
-          path: PulseWeaver-Heartbeat-*-macos.dmg
+      - name: Upload to release
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-macos.dmg --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
 
   build-windows:
     name: Windows MSI
-    needs: test
+    needs: [test, create-release]
     runs-on: windows-latest
     permissions:
-      contents: read
+      contents: write
     steps:
       - uses: actions/checkout@v6
 
@@ -234,37 +237,9 @@ jobs:
           MSI=$(find shared/build/compose/binaries/main/msi -name '*.msi' | head -1)
           cp "$MSI" "PulseWeaver-Heartbeat-${{ github.ref_name }}-windows.msi"
 
-      - uses: actions/upload-artifact@v7
-        with:
-          name: windows-msi
-          path: PulseWeaver-Heartbeat-*-windows.msi
-
-  upload-artifacts:
-    name: Upload release artifacts
-    needs: [create-release, build-android, build-linux, build-macos, build-windows, build-docker]
-    if: |
-      always() &&
-      needs.create-release.result == 'success' &&
-      needs.build-android.result == 'success' &&
-      needs.build-linux.result == 'success' &&
-      needs.build-macos.result == 'success' &&
-      needs.build-windows.result == 'success' &&
-      (needs.build-docker.result == 'success' || needs.build-docker.result == 'skipped')
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/download-artifact@v8
-        with:
-          merge-multiple: true
-
-      - name: Upload artifacts to release
-        run: |
-          gh release upload "${{ github.ref_name }}" \
-            PulseWeaver-Heartbeat-*-android.apk \
-            PulseWeaver-Heartbeat-*-linux-amd64.deb \
-            PulseWeaver-Heartbeat-*-macos.dmg \
-            PulseWeaver-Heartbeat-*-windows.msi
+      - name: Upload to release
+        shell: bash
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-windows.msi --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
