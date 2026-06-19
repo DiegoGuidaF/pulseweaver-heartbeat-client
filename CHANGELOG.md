@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.3] - 2026-06-19
+
+### Miscellaneous
+
+- *(ci)* Reduce artifact storage usage by uploading the assets directly to the release ([`9d3fd99`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/9d3fd990b2424d2f5333f89ed99f5148089e6558))
+
 ## [1.2.2] - 2026-06-18
 
 ### Bug Fixes
