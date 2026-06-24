@@ -293,9 +293,10 @@ fun HeartbeatScreen(
                     text = {
                         Text(
                             "Android pauses background apps to save battery, which can delay your " +
-                                "heartbeat by hours and let this device's access expire. Allow " +
-                                "background activity so PulseWeaver can keep it authorized while " +
-                                "your phone sleeps.",
+                                "heartbeat by hours and let this device's access expire. Open " +
+                                "battery settings, find PulseWeaver in the list, and turn off " +
+                                "optimization so it can keep this device authorized while your " +
+                                "phone sleeps.",
                         )
                     },
                     confirmButton = {
@@ -305,7 +306,7 @@ fun HeartbeatScreen(
                                 BatteryOptimization.requestExemption()
                                 reliabilityDismissed = true
                             },
-                        ) { Text("Allow") }
+                        ) { Text("Open settings") }
                     },
                     dismissButton = {
                         TextButton(onClick = { reliabilityDismissed = true }) { Text("Not now") }

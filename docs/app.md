@@ -23,6 +23,14 @@ handles network changes, and requires no manual intervention after setup.
     to expire addresses via lease configured above, but during traveling (ie car) IP might change faster. This allows to
     at most keep 2 addresses.
 
+> **Android: turn off battery optimization**
+>
+> Android's Doze / App Standby pauses background apps and can defer the heartbeat by hours, letting the device's
+> access expire. On first run the app shows a reliability prompt — tap **Open settings**, find PulseWeaver in the
+> battery-optimization list, and turn optimization **off**. This is required for the background schedule to run on
+> time; without it, a device that isn't opened regularly will keep losing access. Admins: this is the first thing to
+> check when a user reports their access dropping.
+
 
 ## Supported platforms
 

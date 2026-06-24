@@ -41,10 +41,10 @@ Download the latest release from [GitHub Releases](https://github.com/DiegoGuida
 
 The app sends a heartbeat at least every chosen interval (15 min – 1 day), but Android batches background work to save battery, so the actual delivery can slip — especially on a phone that hasn't been opened in a while. Two things keep a device authorized despite that slack:
 
-- **Allow background activity** when the app prompts you. This exempts it from Android's battery optimization (Doze / App Standby), so the schedule runs roughly on time instead of being deferred for hours.
+- **Turn off battery optimization for PulseWeaver.** When the app prompts you, tap **Open settings**, find PulseWeaver in Android's battery-optimization list, and turn optimization off. This exempts the app from Doze / App Standby so the schedule runs roughly on time instead of being deferred for hours. **If you skip this, heartbeats can be delayed by hours and the device's access will keep expiring** — it's the most common reason a mobile device drops off.
 - **Set the server's `addressTTL` to ~8× the interval.** A 15 min heartbeat pairs with a ~2 h TTL: the address stays enabled across a couple of missed background windows, while a genuinely offline device still expires.
 
-For admins: a device whose addresses keep expiring — and the max-enabled-addresses rule — are your signal that something is actually wrong, not just a normal Doze delay.
+For admins: if a user's device addresses keep expiring, the first thing to check is whether battery optimization is still enabled for the app on their phone — have them turn it off as described above. Persistent expiry after that, together with the max-enabled-addresses rule, is your signal that something is actually wrong rather than a normal Doze delay.
 
 ---
 
