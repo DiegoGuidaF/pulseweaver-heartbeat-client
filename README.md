@@ -25,7 +25,7 @@ PulseWeaver is a self-hosted forward-auth gate for reverse proxies — per-user,
 
 **Manual setup:** All three setups need an API key. In the PulseWeaver dashboard, create a **device key** (starts with `wdk_...`). Each device needs its own key.
 
-**Recommended — Device provisioning:** Your PulseWeaver admin creates a registration code (Devices → Provisioning) and shares it with you. Paste it in the Kotlin app — the device and API key are created automatically. See [app docs → Device provisioning](docs/app.md#device-provisioning).
+**Recommended — Device pairing:** Your PulseWeaver admin creates a pairing code (Devices → the device → create a pairing) and shares it with you. Paste it in the Kotlin app — the device and API key are created automatically. See [app docs → Device pairing](docs/app.md#device-pairing).
 
 ---
 
@@ -89,7 +89,7 @@ curl -s -X POST https://pw.example.com/api/v1/heartbeat \
      -H "X-API-Key: wdk_..."
 ```
 
-→ [Full guide — systemd timer, launchd agent, and more](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Lightweight-Heartbeat-Clients.md)
+→ [Full guide — systemd timer, launchd agent, and more](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md)
 
 ---
 

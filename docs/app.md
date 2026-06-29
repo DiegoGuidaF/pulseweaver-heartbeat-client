@@ -62,15 +62,15 @@ from [GitHub Releases](https://github.com/DiegoGuidaF/pulseweaver-heartbeat-clie
 | Windows  | `.msi`                     |
 | macOS    | `.dmg`                     |
 
-## Device provisioning
+## Device pairing
 
-The recommended way to set up the app. The PulseWeaver administrator creates a registration code and shares it with the
-user (QR code or text string). The registration code is single-use.
+The recommended way to set up the app. The PulseWeaver administrator creates a pairing code and shares it with the
+user (QR code or text string). The pairing code is single-use.
 
 Steps the user needs to do:
 
 1. Open the app — on first launch it goes straight to the **Setup screen**.
-2. **Paste** the registration code the administrator sent you.
+2. **Paste** the pairing code the administrator sent you.
 3. Tap **Activate**. The app contacts the PulseWeaver server, registers the device, and auto-configures everything:
    server URL, API key, heartbeat interval, and security settings.
 4. Done — The heartbeat start immediately.
@@ -79,16 +79,16 @@ If the administrator enabled **Lock all app settings**, all settings are read-on
 settings (theme) which remain editable. This is not meant as a security measure, but it is intended to simplify user
 interaction (and errors) since users might have big thumbs :)
 
-To re-provision (e.g. after a server migration), the user can press **Enter a setup code**. The app will ask for
+To re-pair (e.g. after a server migration), the user can press **Enter a setup code**. The app will ask for
 confirmation before replacing the current configuration. This removes all app configuration and allows the user to
 reconfigure it (either via code or manually).
 
-> For how the server side of provisioning works (creating invites, proxy setup, the registration code format), see the
-> [PulseWeaver server documentation](https://github.com/DiegoGuidaF/PulseWeaver#device-provisioning).
+> For how the server side of pairing works (creating pairings, proxy setup, the pairing code format), see the
+> [PulseWeaver server documentation](https://github.com/DiegoGuidaF/PulseWeaver#device-pairing).
 
 ## Manual configuration
 
-If you don't have a registration code, tap **Configure manually** on the setup screen and fill in:
+If you don't have a pairing code, tap **Configure manually** on the setup screen and fill in:
 
 - **Server URL** — your PulseWeaver instance (e.g. `https://pw.example.com`)
 - **API Key** — the `wdk_...` key from the PulseWeaver dashboard
