@@ -62,7 +62,7 @@ fun main() =
         if (isWindowVisible) {
             Window(
                 onCloseRequest = { isWindowVisible = false },
-                title = "PulseWeaver Heartbeat",
+                title = "PulseWeaver Companion",
                 state = rememberWindowState(size = DpSize(460.dp, 720.dp)),
             ) {
                 App(

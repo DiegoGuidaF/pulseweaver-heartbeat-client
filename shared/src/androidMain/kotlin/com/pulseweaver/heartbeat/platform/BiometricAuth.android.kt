@@ -46,7 +46,7 @@ actual object BiometricAuth {
                 BiometricPrompt.PromptInfo
                     .Builder()
                     .setTitle(title)
-                    .setSubtitle("Verify your identity to access PulseWeaver Heartbeat")
+                    .setSubtitle("Verify your identity to access PulseWeaver Companion")
                     .setAllowedAuthenticators(authenticators)
                     .build()
 

@@ -69,7 +69,7 @@ fun AuthGate(content: @Composable () -> Unit) {
             return@LaunchedEffect
         }
         isAuthenticated = false // hide content while prompt is showing
-        val success = BiometricAuth.authenticate("Unlock PulseWeaver Heartbeat")
+        val success = BiometricAuth.authenticate("Unlock PulseWeaver Companion")
         if (success) {
             isAuthenticated = true
             lastAuthMark = TimeSource.Monotonic.markNow()

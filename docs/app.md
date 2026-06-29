@@ -1,12 +1,15 @@
-# Kotlin App — Full Documentation
+# PulseWeaver Companion
 
-The Kotlin Multiplatform app is the full-featured heartbeat client for phones and desktops. It runs in the background,
-handles network changes, and requires no manual intervention after setup.
+**PulseWeaver Companion** is the full-featured heartbeat client for phones and desktops — the app
+that keeps your device authorized on a PulseWeaver server without you thinking about it. It runs in
+the background, re-announces your address the moment you change networks, and after a one-time setup
+needs no further attention.
 
 ## Features
 
 - **Background heartbeats** — configurable interval, runs without user interaction
 - **Network-aware** — detects connectivity changes and sends a heartbeat immediately when back online
+- **Manual heartbeat** — tap the status circle any time to send one right now (see [Sending a heartbeat manually](#sending-a-heartbeat-manually))
 - **Biometric lock** (Android) — optionally require fingerprint/face to view or change settings, with a 60-second grace
   period
 - **System tray** (Desktop) — lives in the tray with a state-aware icon; no window needed after setup
@@ -15,23 +18,58 @@ handles network changes, and requires no manual intervention after setup.
 
 > **Tip for mobile / dynamic IP devices**
 >
-> Enable two per-device rules on the PulseWeaver server so roaming stays clean:
-> * **address lease** — a TTL that must sit above your worst-case heartbeat gap. A ~1 hour lease is a good default for
->   phones and laptops; under Android Doze the effective gap can reach ~30 minutes, so don't set the lease shorter than
->   that or it will flap.
-> * **max active addresses** — cap it at 2. Roaming expires old IPs via the lease, but during travel (e.g. a moving car)
->   the IP can change faster, and keeping 2 avoids dropping mid-switch.
+> A good, battery-friendly pairing for a phone is a **~30-minute heartbeat interval with a ~1-hour
+> server address lease**. Set two per-device rules on the PulseWeaver server so roaming stays clean:
+> * **address lease** — a TTL that must sit above your worst-case heartbeat gap. ~1 hour is a good
+>   default for phones and laptops; under Android Doze the effective gap can reach ~30 minutes, so
+>   don't set the lease shorter than that or it will flap.
+> * **max active addresses** — cap it at 2. Roaming expires old IPs via the lease, but during travel
+>   (e.g. a moving car) the IP can change faster, and keeping 2 avoids dropping mid-switch.
 >
 > Full reasoning: [Recommended settings for roaming devices](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#recommended-settings-for-roaming-devices).
 
 > **Android: turn off battery optimization**
 >
-> Android's Doze / App Standby pauses background apps and can defer the heartbeat by hours, letting the device's
-> access expire. On first run the app shows a reliability prompt — tap **Open settings**, find PulseWeaver in the
-> battery-optimization list, and turn optimization **off**. This is required for the background schedule to run on
-> time; without it, a device that isn't opened regularly will keep losing access. Admins: this is the first thing to
-> check when a user reports their access dropping.
+> Android's Doze / App Standby pauses background apps, especially on a phone that has been asleep —
+> locked and unused — for a while, and can defer the heartbeat by hours, letting the device's access
+> expire. On first run the app shows a reliability prompt — tap **Open settings**, find PulseWeaver
+> Companion in the battery-optimization list, and turn optimization **off**. This is required for the
+> background schedule to run on time. Admins: this is the first thing to check when a user reports
+> their access dropping.
 
+## Sending a heartbeat manually
+
+The main screen shows a status circle at the top. **Tap it to send a heartbeat right now** — it's
+the same request the background schedule sends, just on demand. Use it any time you want to confirm
+connectivity immediately: right after setup, after switching networks, or when you've just been
+granted access to a new host and don't want to wait for the next scheduled beat.
+
+> 📸 _Screenshot needed: the Companion main screen, with the status circle at the top called out as
+> the manual-heartbeat button (and the "last heartbeat" timestamp visible)._
+
+## How many devices need the app?
+
+PulseWeaver gates by the IP it actually sees, so you may need fewer clients than you have devices:
+
+- **Several devices behind the same router on a network that is *not* where your PulseWeaver server
+  lives** (a home, an office, a friend's place — they all share that network's one public IP from the
+  server's point of view): only **one** device there needs to run a client. Its heartbeat keeps that
+  shared address active for everything else on the same network.
+- **A device with a fixed address** (a home server, a desktop on a reserved DHCP lease) doesn't need
+  a client at all — its IP can be [registered manually](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#manual--static-ip-devices) once, with no periodic heartbeat.
+- **Devices on the same local network as the server, and devices on IPv6**, are each seen by their
+  own address, so they each need their own heartbeat.
+
+Which case you're in depends on how your network reaches the server. The details (and the security
+implications of a shared IP) are in the server's [Shared-IP model](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Shared-IP-Model.md).
+
+## Checking it's working
+
+After setup, confirm the **server** is actually seeing your heartbeats: open the device in the
+PulseWeaver dashboard and look at its **address history** — a fresh entry should appear each
+interval, and the `Δ prev` column flags when the gap between heartbeats is creeping toward the
+address lease (so you can raise the interval or the lease before access drops). See
+[Verifying a device is connected](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#verifying-a-device-is-connected).
 
 ## Permissions, privacy & key storage
 
@@ -95,6 +133,10 @@ Steps the user needs to do:
 3. Tap **Activate**. The app contacts the PulseWeaver server, registers the device, and auto-configures everything:
    server URL, API key, heartbeat interval, and security settings.
 4. Done — the heartbeat starts immediately. The main screen shows the switch on and the time of the last heartbeat. If it doesn't activate, double-check the code with your admin — each pairing code is single-use.
+
+> 📸 _Screenshot needed: two shots side by side — (1) the Setup screen with the pairing-code field and
+> the **Activate** button; (2) the main screen just after activation, switch on and a recent "last
+> heartbeat" time._
 
 If the administrator enabled **Lock all app settings**, all settings are read-only with the only exception of appearance
 settings (theme) which remain editable. This is not meant as a security measure, but it is intended to simplify user

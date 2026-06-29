@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-PulseWeaver Heartbeat Client — a Kotlin Multiplatform app that keeps devices authorized on a PulseWeaver server by sending periodic `POST /api/v1/heartbeat` requests. Single core feature; everything else (scheduling, network-aware retries, biometric lock, system tray) is usability around that.
+This repository holds PulseWeaver's heartbeat clients: the **PulseWeaver Companion** app (Kotlin Multiplatform), a Docker container, and a DIY `curl` recipe. This codebase is the Companion app — a Kotlin Multiplatform app that keeps devices authorized on a PulseWeaver server by sending periodic `POST /api/v1/heartbeat` requests. Single core feature; everything else (scheduling, network-aware retries, biometric lock, system tray) is usability around that. ("Heartbeat" is the technical concept and endpoint; "PulseWeaver Companion" is the app's display name — see workspace ADR-008.)
 
 ## Commands
 

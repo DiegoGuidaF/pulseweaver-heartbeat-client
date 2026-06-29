@@ -21,7 +21,7 @@ Only the latest release is actively maintained.
 
 ## Scope
 
-This policy covers the PulseWeaver Heartbeat Client app. For the PulseWeaver server, please report via the
+This policy covers the PulseWeaver Companion app and the other heartbeat clients in this repository. For the PulseWeaver server, please report via the
 [PulseWeaver repository](https://github.com/DiegoGuidaF/PulseWeaver).
 
 The following are in scope:

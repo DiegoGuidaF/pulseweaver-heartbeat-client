@@ -130,10 +130,10 @@ jobs:
       - name: Rename APK
         run: |
           APK=$(find androidApp/build/outputs/apk/release -name '*.apk' | head -1)
-          cp "$APK" "PulseWeaver-Heartbeat-${{ github.ref_name }}-android.apk"
+          cp "$APK" "PulseWeaver-Companion-${{ github.ref_name }}-android.apk"
 
       - name: Upload to release
-        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-android.apk --clobber
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Companion-*-android.apk --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -164,10 +164,10 @@ jobs:
       - name: Rename artifact
         run: |
           DEB=$(find shared/build/compose/binaries/main/deb -name '*.deb' | head -1)
-          cp "$DEB" "PulseWeaver-Heartbeat-${{ github.ref_name }}-linux-amd64.deb"
+          cp "$DEB" "PulseWeaver-Companion-${{ github.ref_name }}-linux-amd64.deb"
 
       - name: Upload to release
-        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-linux-amd64.deb --clobber
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Companion-*-linux-amd64.deb --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -198,10 +198,10 @@ jobs:
       - name: Rename artifact
         run: |
           DMG=$(find shared/build/compose/binaries/main/dmg -name '*.dmg' | head -1)
-          cp "$DMG" "PulseWeaver-Heartbeat-${{ github.ref_name }}-macos.dmg"
+          cp "$DMG" "PulseWeaver-Companion-${{ github.ref_name }}-macos.dmg"
 
       - name: Upload to release
-        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-macos.dmg --clobber
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Companion-*-macos.dmg --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
@@ -235,11 +235,11 @@ jobs:
         shell: bash
         run: |
           MSI=$(find shared/build/compose/binaries/main/msi -name '*.msi' | head -1)
-          cp "$MSI" "PulseWeaver-Heartbeat-${{ github.ref_name }}-windows.msi"
+          cp "$MSI" "PulseWeaver-Companion-${{ github.ref_name }}-windows.msi"
 
       - name: Upload to release
         shell: bash
-        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Heartbeat-*-windows.msi --clobber
+        run: gh release upload "${{ github.ref_name }}" PulseWeaver-Companion-*-windows.msi --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
