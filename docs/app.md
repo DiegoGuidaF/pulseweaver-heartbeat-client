@@ -11,17 +11,18 @@ handles network changes, and requires no manual intervention after setup.
   period
 - **System tray** (Desktop) — lives in the tray with a state-aware icon; no window needed after setup
 - **Light / Dark / Auto theme** — follows your system preference or pick manually
-- **Minimal permissions** — no accounts, no telemetry, no internet access beyond your own server
+- **Minimal permissions, no telemetry** — no accounts, and the only network destination is the PulseWeaver server you configure (details in [Permissions, privacy & key storage](#permissions-privacy--key-storage))
 
 > **Tip for mobile / dynamic IP devices**
 >
-> It is recommended to enable the following rules on the PulseWeaver server for the specific device:
-> * **address lease** rule: set the TTL slightly above the heartbeat interval (e.g. 30 min TTL for a 15 min interval).
-    This way, if a heartbeat is
-    > delayed by a network switch or doze cycle, the IP doesn't expire prematurely.
-> * **max active addresses** rule: 2 addresses should be enough for most cases. The idea is that during roaming we want
-    to expire addresses via lease configured above, but during traveling (ie car) IP might change faster. This allows to
-    at most keep 2 addresses.
+> Enable two per-device rules on the PulseWeaver server so roaming stays clean:
+> * **address lease** — a TTL that must sit above your worst-case heartbeat gap. A ~1 hour lease is a good default for
+>   phones and laptops; under Android Doze the effective gap can reach ~30 minutes, so don't set the lease shorter than
+>   that or it will flap.
+> * **max active addresses** — cap it at 2. Roaming expires old IPs via the lease, but during travel (e.g. a moving car)
+>   the IP can change faster, and keeping 2 avoids dropping mid-switch.
+>
+> Full reasoning: [Recommended settings for roaming devices](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#recommended-settings-for-roaming-devices).
 
 > **Android: turn off battery optimization**
 >
@@ -31,6 +32,28 @@ handles network changes, and requires no manual intervention after setup.
 > time; without it, a device that isn't opened regularly will keep losing access. Admins: this is the first thing to
 > check when a user reports their access dropping.
 
+
+## Permissions, privacy & key storage
+
+**Android permissions.** The app requests only what the heartbeat needs:
+
+| Permission | Why |
+|---|---|
+| `INTERNET` | Send the heartbeat POST |
+| `ACCESS_NETWORK_STATE` | Detect connectivity changes and re-heartbeat immediately when back online |
+| `RECEIVE_BOOT_COMPLETED` | Resume the schedule after a reboot |
+| `USE_BIOMETRIC` | The optional fingerprint/face lock — only used if you enable it |
+
+No location, contacts, storage, or background-location permissions are requested.
+
+**No telemetry.** The app talks to exactly one network destination: the server URL you configure (the heartbeat, plus a one-time pairing claim during setup). There is no analytics or crash-reporting backend. Because the app is open source ([AGPL-3.0](../LICENSE)), you can verify this yourself — see [Building from source](#building-from-source).
+
+**Where your API key is stored.** The key lives in the platform's app-private configuration store; the app does not separately encrypt it:
+
+- **Android** — Jetpack DataStore in app-private internal storage. On Android 10+ this is covered by the OS file-based encryption; on older versions it's protected by the app sandbox.
+- **Desktop** — the Java user-preferences store under your OS user profile. This is **not** encrypted, so rely on your OS account and disk encryption to protect it.
+
+The **biometric lock gates the app UI only** (viewing and changing settings) — it does **not** encrypt the stored key. Someone with filesystem or backup access is bounded by the platform storage protection above, not by the lock.
 
 ## Supported platforms
 
@@ -42,13 +65,7 @@ handles network changes, and requires no manual intervention after setup.
 | macOS    | ✅ Ready    | JVM timer + system tray     |
 | iOS      | 🚧 Planned | BGAppRefreshTask            |
 
-## Screenshots
-
-<!-- Replace these with actual screenshots -->
-
-| Android                                       | Desktop                                       |
-|-----------------------------------------------|-----------------------------------------------|
-| ![Android screenshot](screenshot-android.png) | ![Desktop screenshot](screenshot-desktop.png) |
+The app is pre-1.0: the platforms marked ✅ are functional and tested, but expect rough edges and breaking changes between releases.
 
 ## Installing
 
@@ -62,6 +79,10 @@ from [GitHub Releases](https://github.com/DiegoGuidaF/pulseweaver-heartbeat-clie
 | Windows  | `.msi`                     |
 | macOS    | `.dmg`                     |
 
+On Android you'll need to allow installing the `.apk` from your browser or files app ("install unknown apps").
+
+**Verifying your download.** Android release APKs are signed with the project's release key — inspect the certificate with `apksigner verify --print-certs <file>.apk`, and note that Android refuses to install an update signed by a different key. The desktop installers (`.deb` / `.dmg` / `.msi`) are not yet signed or notarized and no checksums are published; if you need stronger assurance, [build from source](#building-from-source).
+
 ## Device pairing
 
 The recommended way to set up the app. The PulseWeaver administrator creates a pairing code and shares it with the
@@ -73,14 +94,14 @@ Steps the user needs to do:
 2. **Paste** the pairing code the administrator sent you.
 3. Tap **Activate**. The app contacts the PulseWeaver server, registers the device, and auto-configures everything:
    server URL, API key, heartbeat interval, and security settings.
-4. Done — The heartbeat start immediately.
+4. Done — the heartbeat starts immediately. The main screen shows the switch on and the time of the last heartbeat. If it doesn't activate, double-check the code with your admin — each pairing code is single-use.
 
 If the administrator enabled **Lock all app settings**, all settings are read-only with the only exception of appearance
 settings (theme) which remain editable. This is not meant as a security measure, but it is intended to simplify user
 interaction (and errors) since users might have big thumbs :)
 
-To re-pair (e.g. after a server migration), the user can press **Enter a setup code**. The app will ask for
-confirmation before replacing the current configuration. This removes all app configuration and allows the user to
+To re-pair (e.g. after a server migration), the user can press **Enter a setup code** — the same kind of pairing code
+the administrator generates. The app will ask for confirmation before replacing the current configuration. This removes all app configuration and allows the user to
 reconfigure it (either via code or manually).
 
 > For how the server side of pairing works (creating pairings, proxy setup, the pairing code format), see the
@@ -90,9 +111,9 @@ reconfigure it (either via code or manually).
 
 If you don't have a pairing code, tap **Configure manually** on the setup screen and fill in:
 
-- **Server URL** — your PulseWeaver instance (e.g. `https://pw.example.com`)
+- **Server URL** — your PulseWeaver instance, on an endpoint that bypasses the forward-auth gate (e.g. `https://pw-device.example.com`)
 - **API Key** — the `wdk_...` key from the PulseWeaver dashboard
-- **Interval** — how often to send heartbeats (default: 60 seconds)
+- **Interval** — how often to send heartbeats (default: 60 seconds on desktop; on Android the minimum is 15 minutes)
 
 Flip the switch to start. On desktop the app moves to the system tray.
 
