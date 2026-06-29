@@ -11,7 +11,7 @@ handles network changes, and requires no manual intervention after setup.
   period
 - **System tray** (Desktop) — lives in the tray with a state-aware icon; no window needed after setup
 - **Light / Dark / Auto theme** — follows your system preference or pick manually
-- **Minimal permissions, no telemetry** — no accounts, and the only network destination is the PulseWeaver server you configure (details in [Permissions, privacy & key storage](#permissions-privacy--key-storage))
+- **Minimal permissions, no telemetry** — no accounts, and the only network destination is the PulseWeaver server you own and configure (details in [Permissions, privacy & key storage](#permissions-privacy--key-storage))
 
 > **Tip for mobile / dynamic IP devices**
 >

@@ -37,7 +37,7 @@ Fine for a server on a fixed IP — pick the app for anything that roams.
 
 **Manual setup:** All three setups need an API key. In the PulseWeaver dashboard, create the device (**Devices → New device**), then generate its **API key** (starts with `wdk_...`) from **Devices → the device → Settings**. Each device needs its own key.
 
-**Recommended — Device pairing:** Your PulseWeaver admin creates a pairing code (Devices → the device → create a pairing) and shares it with you. Paste it in the Kotlin app — the device and API key are created automatically. See [app docs → Device pairing](docs/app.md#device-pairing).
+**Recommended — Device pairing:** Your PulseWeaver admin creates a pairing code (Devices → the device → create a pairing) and shares it with you. Paste it in the heartbeat-client app — the device and API key are created automatically on pairing claim. See [app docs → Device pairing](docs/app.md#device-pairing).
 
 ---
 
