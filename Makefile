@@ -1,4 +1,4 @@
-.PHONY: help test build-android build-desktop run clean \
+.PHONY: help test screenshots build-android build-desktop run clean \
        package-deb package-dmg package-msi package-all \
        release release-patch release-minor release-major _release \
        generate-keystore setup-secrets lint \
@@ -20,6 +20,10 @@ help: ## Show this help
 
 test: ## Run all tests (JVM)
 	./gradlew shared:jvmTest --stacktrace
+
+screenshots: ## Regenerate documentation screenshots into screenshots/companionapp
+	./gradlew shared:jvmTest --tests "com.pulseweaver.heartbeat.ui.DocScreenshotsTest" \
+		-Dpw.screenshots=true --rerun-tasks
 
 lint: ## Run ktlint
 	./gradlew ktlintCheck

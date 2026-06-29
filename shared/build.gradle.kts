@@ -109,6 +109,13 @@ compose.desktop {
     }
 }
 
+// Forward the doc-screenshot flags to the test JVM so `make screenshots`
+// (-Dpw.screenshots / -Dpw.screenshotDir) reaches DocScreenshotsTest.
+tasks.withType<Test>().configureEach {
+    systemProperty("pw.screenshots", providers.systemProperty("pw.screenshots").getOrElse(""))
+    systemProperty("pw.screenshotDir", providers.systemProperty("pw.screenshotDir").getOrElse(""))
+}
+
 ktlint {
     filter {
         exclude { it.file.path.contains("build/generated") }

@@ -44,8 +44,13 @@ the same request the background schedule sends, just on demand. Use it any time 
 connectivity immediately: right after setup, after switching networks, or when you've just been
 granted access to a new host and don't want to wait for the next scheduled beat.
 
-> 📸 _Screenshot needed: the Companion main screen, with the status circle at the top called out as
-> the manual-heartbeat button (and the "last heartbeat" timestamp visible)._
+<p >
+  <img src="../screenshots/companionapp/main-manual-heartbeat.png" alt="Companion main screen: the amber status circle is the manual-heartbeat button, with the last-heartbeat time below it" width="320">
+</p>
+
+> _Screenshots are captured from the desktop build. The phone UI is the same shared layout, with
+> minor platform differences (e.g. the **Send Now** button is desktop-only; the phone adds a QR
+> scanner on setup)._
 
 ## How many devices need the app?
 
@@ -58,7 +63,7 @@ PulseWeaver gates by the IP it actually sees, so you may need fewer clients than
 - **A device with a fixed address** (a home server, a desktop on a reserved DHCP lease) doesn't need
   a client at all — its IP can be [registered manually](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#manual--static-ip-devices) once, with no periodic heartbeat.
 - **Devices on the same local network as the server, and devices on IPv6**, are each seen by their
-  own address, so they each need their own heartbeat.
+  own address, so they each need their own heartbeat or a network policy (CIDR) that covers them.
 
 Which case you're in depends on how your network reaches the server. The details (and the security
 implications of a shared IP) are in the server's [Shared-IP model](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Shared-IP-Model.md).
@@ -134,9 +139,15 @@ Steps the user needs to do:
    server URL, API key, heartbeat interval, and security settings.
 4. Done — the heartbeat starts immediately. The main screen shows the switch on and the time of the last heartbeat. If it doesn't activate, double-check the code with your admin — each pairing code is single-use.
 
-> 📸 _Screenshot needed: two shots side by side — (1) the Setup screen with the pairing-code field and
-> the **Activate** button; (2) the main screen just after activation, switch on and a recent "last
-> heartbeat" time._
+<table>
+  <tr>
+    <td ><img src="../screenshots/companionapp/setup-pairing.png" alt="Setup screen with the pairing code pasted into the field and the Activate button below" width="300"><br><em>1. Paste the code, tap Activate</em></td>
+    <td ><img src="../screenshots/companionapp/main-after-activation.png" alt="Main screen just after activation: heartbeat switch on, recent last-heartbeat time" width="300"><br><em>2. Heartbeat running right after</em></td>
+  </tr>
+</table>
+
+> _Desktop capture — on a phone the Setup screen also shows a **Scan QR code** button above the
+> code field, so you can scan the administrator's QR instead of pasting._
 
 If the administrator enabled **Lock all app settings**, all settings are read-only with the only exception of appearance
 settings (theme) which remain editable. This is not meant as a security measure, but it is intended to simplify user
