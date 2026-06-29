@@ -16,17 +16,28 @@ sealed interface RegistrationResult {
         val response: RegistrationResponse,
     ) : RegistrationResult
 
+    /**
+     * [reason] carries the user-facing copy and the stable `PWC-PAIR-*`
+     * diagnostic; [detail] holds supplementary admin context (e.g. the raw HTTP
+     * status) that is shown alongside the code but is never part of it.
+     */
     data class Error(
-        val message: String,
+        val reason: PairingError,
+        val detail: String? = null,
     ) : RegistrationResult
 }
 
 class RegistrationClient(
     private val client: HttpClient = HeartbeatClient.defaultClient(),
 ) {
-    suspend fun claim(code: String): RegistrationResult =
-        try {
-            val serverUrl = decodeServerURL(code)
+    suspend fun claim(rawCode: String): RegistrationResult {
+        val code = sanitizePairingCode(rawCode)
+        val serverUrl =
+            when (val check = validatePairingCode(code)) {
+                is PairingCodeCheck.Valid -> check.serverUrl
+                is PairingCodeCheck.Invalid -> return RegistrationResult.Error(check.reason)
+            }
+        return try {
             val url = serverUrl.trimEnd('/') + "/api/v1/device-pair"
             val response =
                 client.post(url) {
@@ -36,17 +47,20 @@ class RegistrationClient(
                 }
             when (response.status.value) {
                 200, 201 -> RegistrationResult.Success(response.body())
-                400 -> RegistrationResult.Error("Invalid registration code")
-                404, 410 -> RegistrationResult.Error("Code expired or already used")
-                else -> RegistrationResult.Error("Server error (${response.status.value})")
+                400 -> RegistrationResult.Error(PairingError.REJECTED)
+                404, 410 -> RegistrationResult.Error(PairingError.EXPIRED)
+                else ->
+                    RegistrationResult.Error(
+                        PairingError.SERVER,
+                        detail = "HTTP ${response.status.value}",
+                    )
             }
         } catch (e: CancellationException) {
             throw e
-        } catch (e: IllegalArgumentException) {
-            RegistrationResult.Error("Invalid registration code")
         } catch (e: Exception) {
-            RegistrationResult.Error("Connection failed")
+            RegistrationResult.Error(PairingError.NETWORK)
         }
+    }
 
     companion object {
         /**

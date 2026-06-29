@@ -104,7 +104,7 @@ class RegistrationClientTest {
         }
 
     @Test
-    fun claim_400_returnsInvalidCodeError() =
+    fun claim_400_returnsRejectedError() =
         runTest {
             val code = buildCode("https://pulse.example.com")
             val client = mockClient("Bad Request", HttpStatusCode.BadRequest)
@@ -112,11 +112,11 @@ class RegistrationClientTest {
             val result = client.claim(code)
 
             assertIs<RegistrationResult.Error>(result)
-            assertEquals("Invalid registration code", result.message)
+            assertEquals(PairingError.REJECTED, result.reason)
         }
 
     @Test
-    fun claim_404_returnsExpiredOrUsedError() =
+    fun claim_404_returnsExpiredError() =
         runTest {
             val code = buildCode("https://pulse.example.com")
             val client = mockClient("Not Found", HttpStatusCode.NotFound)
@@ -124,11 +124,11 @@ class RegistrationClientTest {
             val result = client.claim(code)
 
             assertIs<RegistrationResult.Error>(result)
-            assertEquals("Code expired or already used", result.message)
+            assertEquals(PairingError.EXPIRED, result.reason)
         }
 
     @Test
-    fun claim_410_returnsExpiredOrUsedError() =
+    fun claim_410_returnsExpiredError() =
         runTest {
             val code = buildCode("https://pulse.example.com")
             val client = mockClient("Gone", HttpStatusCode.Gone)
@@ -136,11 +136,53 @@ class RegistrationClientTest {
             val result = client.claim(code)
 
             assertIs<RegistrationResult.Error>(result)
-            assertEquals("Code expired or already used", result.message)
+            assertEquals(PairingError.EXPIRED, result.reason)
         }
 
     @Test
-    fun claim_networkFailure_returnsConnectionFailed() =
+    fun claim_500_returnsServerErrorWithStatusDetail() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val client = mockClient("Boom", HttpStatusCode.InternalServerError)
+
+            val result = client.claim(code)
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals(PairingError.SERVER, result.reason)
+            assertEquals("HTTP 500", result.detail)
+        }
+
+    @Test
+    fun claim_malformedCode_failsLocallyWithoutNetwork() =
+        runTest {
+            val engine = MockEngine { error("network must not be touched for a malformed code") }
+            val httpClient =
+                HttpClient(engine) {
+                    install(ContentNegotiation) { json(Json { ignoreUnknownKeys = true }) }
+                }
+            val client = RegistrationClient(httpClient)
+
+            val result = client.claim("not-a-real-code")
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals(PairingError.FORMAT, result.reason)
+        }
+
+    @Test
+    fun claim_toleratesWhitespaceAndPaddingArtifacts() =
+        runTest {
+            val code = buildCode("https://pulse.example.com")
+            val messy = "  ${code.chunked(8).joinToString("\n")}  "
+            val client = mockClient(sampleResponseBody, HttpStatusCode.OK)
+
+            val result = client.claim(messy)
+
+            assertIs<RegistrationResult.Success>(result)
+            assertEquals("https://pulse.example.com", result.response.serverUrl)
+        }
+
+    @Test
+    fun claim_networkFailure_returnsNetworkError() =
         runTest {
             val code = buildCode("https://pulse.example.com")
             val engine = MockEngine { throw RuntimeException("No route to host") }
@@ -153,6 +195,6 @@ class RegistrationClientTest {
             val result = client.claim(code)
 
             assertIs<RegistrationResult.Error>(result)
-            assertEquals("Connection failed", result.message)
+            assertEquals(PairingError.NETWORK, result.reason)
         }
 }

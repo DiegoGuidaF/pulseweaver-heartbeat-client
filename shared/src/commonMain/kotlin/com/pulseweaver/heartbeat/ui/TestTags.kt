@@ -26,7 +26,10 @@ object TestTags {
     const val SETUP_SCREEN = "setup_screen"
     const val REGISTRATION_CODE_FIELD = "registration_code_field"
     const val SCAN_QR_BUTTON = "scan_qr_button"
+    const val PASTE_CODE_BUTTON = "paste_code_button"
     const val ACTIVATE_BUTTON = "activate_button"
     const val MANUAL_SETUP_LINK = "manual_setup_link"
+    const val SETUP_HOST_CONFIRM = "setup_host_confirm"
     const val SETUP_ERROR_TEXT = "setup_error_text"
+    const val SETUP_ERROR_DETAIL = "setup_error_detail"
 }

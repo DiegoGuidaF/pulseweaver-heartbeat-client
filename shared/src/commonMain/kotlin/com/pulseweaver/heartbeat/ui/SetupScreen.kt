@@ -32,9 +32,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
+import com.pulseweaver.heartbeat.platform.Clipboard
 import com.pulseweaver.heartbeat.platform.QrScanner
+import com.pulseweaver.heartbeat.service.PairingCodeCheck
 import com.pulseweaver.heartbeat.service.RegistrationClient
 import com.pulseweaver.heartbeat.service.RegistrationResult
+import com.pulseweaver.heartbeat.service.sanitizePairingCode
+import com.pulseweaver.heartbeat.service.serverHost
+import com.pulseweaver.heartbeat.service.validatePairingCode
 import kotlinx.coroutines.launch
 
 @Composable
@@ -44,12 +49,20 @@ fun SetupScreen(
 ) {
     var code by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<RegistrationResult.Error?>(null) }
 
     val coroutineScope = rememberCoroutineScope()
     val registrationClient = remember { RegistrationClient() }
     val configStore = remember { ConfigStore() }
     val canScanQr = remember { QrScanner.isAvailable() }
+    val canPaste = remember { Clipboard.isAvailable() }
+
+    // Local, network-free check used only to reassure the user which server a
+    // recognized code points at; the actual gating happens inside claim().
+    val recognizedHost =
+        remember(code) {
+            (validatePairingCode(code) as? PairingCodeCheck.Valid)?.let { serverHost(it.serverUrl) }
+        }
 
     Column(
         modifier =
@@ -95,16 +108,49 @@ fun SetupScreen(
         OutlinedTextField(
             value = code,
             onValueChange = {
-                code = it
-                errorMessage = ""
+                code = sanitizePairingCode(it)
+                error = null
             },
             placeholder = { Text("Paste code here") },
             singleLine = true,
+            isError = error != null,
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .testTag(TestTags.REGISTRATION_CODE_FIELD),
         )
+
+        if (recognizedHost != null && error == null) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Ready to pair with $recognizedHost",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.SETUP_HOST_CONFIRM),
+            )
+        }
+
+        if (canPaste) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = {
+                    coroutineScope.launch {
+                        val pasted = Clipboard.readText()
+                        if (pasted != null) {
+                            code = sanitizePairingCode(pasted)
+                            error = null
+                        }
+                    }
+                },
+                enabled = !isLoading,
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.PASTE_CODE_BUTTON),
+            ) {
+                Text("Paste from clipboard")
+            }
+        }
 
         if (canScanQr) {
             Spacer(Modifier.height(12.dp))
@@ -113,8 +159,8 @@ fun SetupScreen(
                     coroutineScope.launch {
                         val scanned = QrScanner.scan()
                         if (scanned != null) {
-                            code = scanned.trim()
-                            errorMessage = ""
+                            code = sanitizePairingCode(scanned)
+                            error = null
                         }
                     }
                 },
@@ -128,13 +174,20 @@ fun SetupScreen(
             }
         }
 
-        if (errorMessage.isNotEmpty()) {
-            Spacer(Modifier.height(6.dp))
+        error?.let { failure ->
+            Spacer(Modifier.height(10.dp))
             Text(
-                text = errorMessage,
+                text = failure.reason.userMessage + (failure.reason.userAction?.let { " $it" } ?: ""),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.testTag(TestTags.SETUP_ERROR_TEXT),
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = failure.reason.code + (failure.detail?.let { " · $it" } ?: ""),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.testTag(TestTags.SETUP_ERROR_DETAIL),
             )
         }
 
@@ -144,8 +197,8 @@ fun SetupScreen(
             onClick = {
                 coroutineScope.launch {
                     isLoading = true
-                    errorMessage = ""
-                    when (val result = registrationClient.claim(code.trim())) {
+                    error = null
+                    when (val result = registrationClient.claim(code)) {
                         is RegistrationResult.Success -> {
                             val r = result.response
                             val config =
@@ -161,7 +214,7 @@ fun SetupScreen(
                             onProvisioningComplete(config)
                         }
                         is RegistrationResult.Error -> {
-                            errorMessage = result.message
+                            error = result
                         }
                     }
                     isLoading = false

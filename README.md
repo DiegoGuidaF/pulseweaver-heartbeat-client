@@ -54,6 +54,15 @@ this path.
 
 ---
 
+## 🩺 Pairing error codes
+
+Pairing is a PulseWeaver Companion feature, so its failure codes are specific to
+the app (Docker and curl don't pair). If activation fails, the app shows a
+plain-language message and a short diagnostic code (e.g. `PWC-PAIR-EXPIRED`) you
+can read back to your administrator — it points to the exact cause regardless of
+the underlying HTTP status. The full list and what to do for each is in
+**[Companion → Pairing error codes](docs/app.md#pairing-error-codes)**.
+
 ## 🔌 API reference
 
 All three clients call the same endpoint. No server-side changes are needed beyond generating an API key.

@@ -160,6 +160,22 @@ reconfigure it (either via code or manually).
 > For how the server side of pairing works (creating pairings, proxy setup, the pairing code format), see the
 > [PulseWeaver server documentation](https://github.com/DiegoGuidaF/PulseWeaver#device-pairing).
 
+### Pairing error codes
+
+If activation fails, the app shows a plain-language message and a short
+diagnostic code (e.g. `PWC-PAIR-EXPIRED`). Each code maps one-to-one to a cause
+below, independent of the underlying HTTP status — read it back to your
+administrator and they can tell what went wrong from the code alone.
+
+| Code | What it means | What to do |
+|------|---------------|------------|
+| `PWC-PAIR-FORMAT` | The code couldn't be read — usually a partial copy/paste. | Re-copy the **whole** code and paste again, or scan the QR. |
+| `PWC-PAIR-URL` | The code was read, but the server address inside it is invalid. | The code is likely truncated or was generated against a misconfigured server URL — ask your administrator for a fresh code. |
+| `PWC-PAIR-REJECTED` | The server rejected the code (HTTP 400). | Ask your administrator for a new code. |
+| `PWC-PAIR-EXPIRED` | The code has expired or was already used (HTTP 404/410). | Ask your administrator for a new code. |
+| `PWC-PAIR-SERVER` | The server reported an error; the raw status is shown alongside (e.g. `HTTP 503`). | Try again shortly. If it persists, the administrator should check server logs. |
+| `PWC-PAIR-NETWORK` | The device couldn't reach the server. | Check the device's internet connection and that the server is reachable. |
+
 ## Manual configuration
 
 If you don't have a pairing code, tap **Configure manually** on the setup screen and fill in:
