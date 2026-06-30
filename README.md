@@ -93,4 +93,5 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) for how to report it priva
 
 ## License
 
-[AGPL-3.0](LICENSE)
+[MIT](LICENSE) — the client is permissively licensed to encourage third-party clients and
+integrations. The PulseWeaver server is [AGPL-3.0](https://github.com/DiegoGuidaF/PulseWeaver).
