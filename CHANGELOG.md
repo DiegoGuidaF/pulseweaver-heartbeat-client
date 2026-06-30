@@ -2,6 +2,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.0] - 2026-06-30
+
+### Documentation
+
+- Remove patterns.md; conventions live in the private workspace ([`89d166c`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/89d166c738d18dcce9ecb0609a2e30903398d39a))
+- Align pairing terminology and fix server doc links ([`9cd1a45`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/9cd1a4544c09a84e7bf8f02ea4e65d48000ac5be))
+- Rework client docs per approachability review ([`0ef3e62`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/0ef3e62452e4f5fe04cc24391944d95a452624f0))
+- Clarify pairing-claim and key-storage wording ([`5050aff`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/5050affd1138d4a2bc00cefbbd1a13660faafc99))
+
+### Features
+
+- Do not require background permission but guide user on setting it so we can more easily request play store deployment ([`44872b6`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/44872b6f3e792c80f33fd70e6de25cc0384ad043))
+- Make pairing-code input more resilient to user issues: Allow only expected characters (do not allow spaces nor line jumps amongst many others), allow easy clipboard paste and improve user feedback with specific error codes ([`8735650`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/873565034633a2526417d27212c373d2c0bddc45))
+
+### Miscellaneous
+
+- *(deps)* Bump gradle-wrapper in the gradle-minor-patch group ([#25](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/pull/25)) ([`e0c50bb`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/e0c50bbf785689d98bd2fd904939c2e1e7a0a647))
+- *(deps)* Bump the gradle-minor-patch group with 8 updates ([#26](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/pull/26)) ([`7a4958f`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/7a4958f9c7be631376e54b82ded36c6fc56171ed))
+- Improve theming and fix desktop app theming issues. Add tests to automatically generate desktop-mode screenshots for documentation ([`e5a628a`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/e5a628af6d27385dff786e7c51b29fd26cd22f1e))
+
+### Refactor
+
+- Rename app to PulseWeaver Companion; restructure client docs ([`4cc3778`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/4cc3778d9494465558cc558a664ef73a0b9cc018))
+
 ## [1.2.3] - 2026-06-19
 
 ### Miscellaneous
