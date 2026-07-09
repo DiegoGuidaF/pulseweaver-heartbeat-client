@@ -105,6 +105,19 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "PulseWeaver Companion"
             packageVersion = appVersion
+
+            macOS {
+                // The Companion's whole job is periodic network beats, so opt out of App Nap:
+                // otherwise macOS suspends the process (and its timers) once its window is hidden
+                // to the tray, silently stalling the heartbeat.
+                infoPlist {
+                    extraKeysRawXml =
+                        """
+                        <key>NSAppSleepDisabled</key>
+                        <true/>
+                        """.trimIndent()
+                }
+            }
         }
     }
 }

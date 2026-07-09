@@ -1,6 +1,7 @@
 package com.pulseweaver.heartbeat.service
 
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
+import com.pulseweaver.heartbeat.platform.Log
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -64,8 +65,7 @@ class HeartbeatClient(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            println("HeartbeatClient: send failed → ${e::class.simpleName}: ${e.message}")
-            e.cause?.let { println("HeartbeatClient: caused by → ${it::class.simpleName}: ${it.message}") }
+            Log.w("Heartbeat", "send failed (trigger=$trigger)", e)
             HeartbeatResult.error(
                 "Connection failed",
                 "Heartbeat will resume when connected",

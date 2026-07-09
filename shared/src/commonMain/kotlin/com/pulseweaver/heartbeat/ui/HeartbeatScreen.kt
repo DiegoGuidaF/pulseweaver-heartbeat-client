@@ -51,6 +51,7 @@ import com.pulseweaver.heartbeat.config.ThemeMode
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.BatteryOptimization
 import com.pulseweaver.heartbeat.platform.BiometricAuth
+import com.pulseweaver.heartbeat.platform.Log
 import com.pulseweaver.heartbeat.platform.NetworkMonitor
 import com.pulseweaver.heartbeat.platform.UrlOpener
 import com.pulseweaver.heartbeat.platform.currentEpochMs
@@ -115,6 +116,7 @@ fun HeartbeatScreen(
     suspend fun sendHeartbeat(trigger: String) {
         if (isSending) return
         isSending = true
+        Log.i("Heartbeat", "send: trigger=$trigger")
         val result = client.send(config, trigger)
         val epochMs = currentEpochMs()
         lastResult = result
@@ -123,6 +125,11 @@ fun HeartbeatScreen(
         lastResultEpochMs = epochMs
         resultStore.save(result, lastResultTime, epochMs)
         onLastResultChange(result)
+        if (result.success) {
+            Log.i("Heartbeat", "ok: ${result.message} (ip=${result.ip})")
+        } else {
+            Log.w("Heartbeat", "error: ${result.message}")
+        }
         isSending = false
     }
 

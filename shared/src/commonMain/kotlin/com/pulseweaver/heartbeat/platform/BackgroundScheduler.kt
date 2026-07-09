@@ -4,7 +4,7 @@ package com.pulseweaver.heartbeat.platform
  * Schedules a periodic heartbeat on each platform.
  *
  * Constructed with platform-specific parameters in each entry point:
- * - Desktop (jvmMain): BackgroundScheduler(appScope: CoroutineScope)
+ * - Desktop (jvmMain): BackgroundScheduler() — runs on its own background scope
  * - Android (androidMain): BackgroundScheduler() — WorkManager (Stage 4)
  * - iOS (iosMain): BackgroundScheduler() — BGAppRefreshTask (Stage later)
  *
