@@ -1,4 +1,4 @@
-.PHONY: help test screenshots build-android build-desktop run clean \
+.PHONY: help test verify-all check screenshots build-android build-desktop run run-debug clean \
        package-deb package-dmg package-msi package-all \
        release release-patch release-minor release-major _release \
        generate-keystore setup-secrets lint \
@@ -15,26 +15,65 @@ help: ## Show this help
 		awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 # ---------------------------------------------------------------------------
+# Gradle invocation (verification targets)
+# ---------------------------------------------------------------------------
+# The macOS Kotlin compiler daemon writes its `*.alive` flag file to the system
+# temp dir (java.io.tmpdir), which the Claude Code sandbox denies with
+# "Operation not permitted". Route Kotlin's temp to a project-local dir and
+# compile in-process so the verify targets run cleanly under the sandbox. The
+# trade-off — no persistent compiler daemon, so slightly slower warm builds — is
+# why only the verification targets use this; interactive/packaging targets keep
+# plain ./gradlew and its daemon. --no-configuration-cache avoids caching a failed
+# sandboxed run (org.gradle.configuration-cache=true is on by default).
+KOTLIN_TMP := $(CURDIR)/build/tmp-kotlin
+GRADLEW_VERIFY = TMPDIR=$(KOTLIN_TMP) ./gradlew --no-configuration-cache \
+	-Dkotlin.compiler.execution.strategy=in-process -Djava.io.tmpdir=$(KOTLIN_TMP)
+
+# Per-source-set ktlint checks. The top-level `ktlintCheck` also scans generated
+# Compose resource collectors and is unreliable — see
+# docs/patterns/kotlin-multiplatform/testing.md in the workspace.
+KTLINT_CHECK_TASKS = shared:runKtlintCheckOverCommonMainSourceSet \
+	shared:runKtlintCheckOverAndroidMainSourceSet \
+	shared:runKtlintCheckOverJvmMainSourceSet \
+	shared:runKtlintCheckOverCommonTestSourceSet \
+	shared:runKtlintCheckOverJvmTestSourceSet
+
+$(KOTLIN_TMP):
+	@mkdir -p $(KOTLIN_TMP)
+
+# ---------------------------------------------------------------------------
 # Development
 # ---------------------------------------------------------------------------
 
-test: ## Run all tests (JVM)
-	./gradlew shared:jvmTest --stacktrace
+test: | $(KOTLIN_TMP) ## Run all tests (JVM)
+	$(GRADLEW_VERIFY) shared:jvmTest --stacktrace
+
+verify-all: | $(KOTLIN_TMP) ## Compile every target (jvm+android+ios) and run JVM tests
+	$(GRADLEW_VERIFY) \
+		shared:compileKotlinJvm \
+		shared:compileAndroidMain \
+		shared:compileKotlinIosArm64 \
+		shared:jvmTest --stacktrace
 
 screenshots: ## Regenerate documentation screenshots into screenshots/companionapp
 	./gradlew shared:jvmTest --tests "com.pulseweaver.heartbeat.ui.DocScreenshotsTest" \
 		-Dpw.screenshots=true --rerun-tasks
 
-lint: ## Run ktlint
-	./gradlew ktlintCheck
+lint: | $(KOTLIN_TMP) ## Run ktlint (per-source-set; top-level ktlintCheck is unreliable)
+	$(GRADLEW_VERIFY) $(KTLINT_CHECK_TASKS)
 
 run: ## Run desktop app
 	./gradlew :shared:run
 
+# Debug interval in seconds for `run-debug` (override: make run-debug PW_INTERVAL=10)
+PW_INTERVAL ?= 5
+run-debug: ## Run desktop app in debug mode (verbose logs + PW_INTERVAL beat, default 5s)
+	PW_DEBUG=1 PW_INTERVAL=$(PW_INTERVAL) ./gradlew :shared:run
+
 clean: ## Clean build outputs
 	./gradlew clean
 
-check: lint test
+check: lint test ## Lint + tests
 
 # ---------------------------------------------------------------------------
 # Build

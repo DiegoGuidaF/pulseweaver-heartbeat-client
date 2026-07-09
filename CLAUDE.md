@@ -13,14 +13,17 @@ All commands run from the repo root. Requires **JDK 17+** (Android builds also n
 ### Build & Run
 - `./gradlew shared:run` — run desktop app (current OS)
 - `./gradlew androidApp:assembleDebug` — build Android debug APK
+- `PW_DEBUG=1 PW_INTERVAL=5 ./gradlew shared:run` — desktop app in debug mode: verbose logs to stderr + `~/Library/Logs/PulseWeaver/companion.log`, and a short heartbeat interval so a live beat is observable in seconds (debug-only; ignored without `PW_DEBUG`)
 
-### Test
-- `./gradlew shared:jvmTest` — run JVM tests (unit + compose UI tests)
-- `./gradlew shared:allTests` — run tests on all available targets
+### Verify
+- `make lint` — ktlint over every source set (**not** top-level `ktlintCheck`, which fails on generated Compose resource collectors)
+- `make test` — JVM tests (unit + compose UI tests)
+- `make verify-all` — compile all targets (jvm + android + ios) + JVM tests
+- `make check` — `lint` + `test`
 
-### Lint
-- `./gradlew ktlintCheck` — check Kotlin code style
-- `./gradlew ktlintFormat` — auto-fix code style
+These Makefile targets are sandbox-safe. Ad-hoc `./gradlew` fails under the Claude Code sandbox on the Kotlin daemon's temp file — see the workspace pattern `docs/patterns/kotlin-multiplatform/testing.md` for the known-good invocation.
+
+- `./gradlew ktlintFormat` — auto-fix code style (top-level format is safe)
 
 ### Package
 - `./gradlew shared:packageDmg` — macOS installer

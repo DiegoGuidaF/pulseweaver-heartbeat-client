@@ -43,8 +43,7 @@ internal actual fun writePlatformLog(
     }
 }
 
-internal actual fun isDebugLoggingEnabled(): Boolean =
-    System.getenv("PW_DEBUG") != null || System.getProperty("pw.debug") != null
+internal actual fun isDebugLoggingEnabled(): Boolean = System.getenv("PW_DEBUG") != null || System.getProperty("pw.debug") != null
 
 /** Renames the current log to `<name>.1` (replacing any prior backup) so the live file starts fresh. */
 private fun rotate(file: File) {

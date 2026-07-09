@@ -27,11 +27,15 @@ actual class BackgroundScheduler(
         onTick: suspend () -> Unit,
     ) {
         job?.cancel()
-        Log.i("Scheduler", "scheduled: every ${intervalSeconds}s")
+        val effectiveSeconds = debugIntervalOverrideSeconds() ?: intervalSeconds
+        if (effectiveSeconds != intervalSeconds) {
+            Log.w("Scheduler", "debug interval override: ${effectiveSeconds}s (configured ${intervalSeconds}s)")
+        }
+        Log.i("Scheduler", "scheduled: every ${effectiveSeconds}s")
         job =
             scope.launch {
                 while (isActive) {
-                    delay(intervalSeconds * 1_000L)
+                    delay(effectiveSeconds * 1_000L)
                     if (isActive) {
                         Log.d("Scheduler", "tick")
                         onTick()
@@ -45,4 +49,17 @@ actual class BackgroundScheduler(
         job?.cancel()
         job = null
     }
+}
+
+/**
+ * Debug-only heartbeat interval in seconds, or null when unset. Lets a developer watch a live
+ * scheduled beat in seconds instead of waiting out the [MIN_INTERVAL_SECONDS] floor. Honoured
+ * only when debug mode is on ([isDebugLoggingEnabled]), so a normal install can never shorten its
+ * interval: run with `PW_DEBUG=1 PW_INTERVAL=5` (env, inherited by `gradlew run`) or
+ * `-Dpw.debug -Dpw.interval=5`.
+ */
+private fun debugIntervalOverrideSeconds(): Int? {
+    if (!isDebugLoggingEnabled()) return null
+    val raw = System.getenv("PW_INTERVAL") ?: System.getProperty("pw.interval") ?: return null
+    return raw.toIntOrNull()?.takeIf { it > 0 }
 }
