@@ -20,6 +20,7 @@ concurrency:
 jobs:
   label:
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       ref: ${{ steps.ref.outputs.ref }}
     steps:

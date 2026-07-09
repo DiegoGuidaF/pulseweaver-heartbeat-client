@@ -28,3 +28,14 @@ updates:
       github-actions:
         patterns: ["*"]
         update-types: ["minor", "patch"]
+
+  # Docker base image for the curl heartbeat container
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 5
+    assignees: ["DiegoGuidaF"]
+    labels: ["dependencies", "docker"]

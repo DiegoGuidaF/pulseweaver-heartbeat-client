@@ -1,0 +1,30 @@
+name: Dependency Submission
+
+# Submits the Gradle dependency graph to GitHub for Dependabot alerts.
+# Scoped to runtime classpaths so only shipped dependencies are reported —
+# the buildscript/plugin classpath (Android Gradle Plugin & tooling) is left
+# out, since its CVEs never reach the packaged Companion app and aren't
+# fixable from this repo. Replaces GitHub's Automatic Dependency Submission,
+# which submits the full graph including that tooling.
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+
+      - uses: gradle/actions/dependency-submission@v6
+        env:
+          DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: '.*[Rr]untimeClasspath'
