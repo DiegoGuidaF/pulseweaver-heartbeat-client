@@ -1,0 +1,65 @@
+name: Dev Build
+
+# On-demand build of every companion package without cutting a release.
+# Trigger from the Actions tab, pick a branch, then download the packages from
+# this run's artifacts. No tag, no GitHub Release. The Windows MSI and macOS
+# DMG bundle their own JRE, so the target machine needs nothing installed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app-version:
+        description: Version for packaging (numeric MAJOR.MINOR.PATCH — must be valid for MSI)
+        default: '1.0.0'
+        type: string
+
+concurrency:
+  group: dev-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.ref.outputs.ref }}
+    steps:
+      - id: ref
+        run: echo "ref=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: label
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runs-on: ubuntu-latest
+            task: ':androidApp:assembleDebug'
+            dir: androidApp/build/outputs/apk/debug
+            pattern: '*.apk'
+            suffix: android.apk
+          - runs-on: ubuntu-latest
+            task: ':shared:packageDeb'
+            dir: shared/build/compose/binaries/main/deb
+            pattern: '*.deb'
+            suffix: linux-amd64.deb
+          - runs-on: macos-latest
+            task: ':shared:packageDmg'
+            dir: shared/build/compose/binaries/main/dmg
+            pattern: '*.dmg'
+            suffix: macos.dmg
+          - runs-on: windows-latest
+            task: ':shared:packageMsi'
+            dir: shared/build/compose/binaries/main/msi
+            pattern: '*.msi'
+            suffix: windows.msi
+    uses: ./.github/workflows/_build.yml
+    with:
+      runs-on: ${{ matrix.runs-on }}
+      gradle-task: ${{ matrix.task }}
+      artifact-dir: ${{ matrix.dir }}
+      artifact-pattern: ${{ matrix.pattern }}
+      output-name: PulseWeaver-Companion-${{ needs.label.outputs.ref }}-${{ matrix.suffix }}
+      app-version: ${{ inputs.app-version }}
+    secrets: inherit

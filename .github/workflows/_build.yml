@@ -1,0 +1,100 @@
+name: Build Package
+
+# Reusable build for a single companion package. Callers pick the runner,
+# Gradle task, and where the built file lands: attached to a GitHub Release
+# (upload-to-release) or stored as a workflow artifact for on-demand dev builds.
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: Runner OS for this build
+        required: true
+        type: string
+      gradle-task:
+        description: Gradle task that produces the package
+        required: true
+        type: string
+      artifact-dir:
+        description: Directory the built package lands in
+        required: true
+        type: string
+      artifact-pattern:
+        description: find(1) -name pattern that matches the built package
+        required: true
+        type: string
+      output-name:
+        description: Final filename (and workflow-artifact name) for the package
+        required: true
+        type: string
+      app-version:
+        description: Value for -PappVersion; a leading 'v' is stripped
+        required: true
+        type: string
+      needs-keystore:
+        description: Decode the Android signing keystore before building
+        default: false
+        type: boolean
+      upload-to-release:
+        description: Attach to a GitHub Release instead of workflow artifacts
+        default: false
+        type: boolean
+      release-tag:
+        description: Release tag to upload to (when upload-to-release is true)
+        default: ''
+        type: string
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: zulu
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v6
+
+      - name: Decode keystore
+        if: ${{ inputs.needs-keystore }}
+        shell: bash
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$GITHUB_WORKSPACE/release.keystore"
+
+      - name: Build package
+        shell: bash
+        env:
+          KEYSTORE_FILE: ${{ inputs.needs-keystore && format('{0}/release.keystore', github.workspace) || '' }}
+          KEYSTORE_PASSWORD: ${{ inputs.needs-keystore && secrets.KEYSTORE_PASSWORD || '' }}
+          KEY_ALIAS: ${{ inputs.needs-keystore && secrets.KEY_ALIAS || '' }}
+        run: |
+          version="${{ inputs.app-version }}"
+          ./gradlew ${{ inputs.gradle-task }} -PappVersion="${version#v}" --stacktrace
+
+      - name: Collect artifact
+        id: collect
+        shell: bash
+        run: |
+          file=$(find "${{ inputs.artifact-dir }}" -name "${{ inputs.artifact-pattern }}" | head -1)
+          if [ -z "$file" ]; then
+            echo "No artifact matched ${{ inputs.artifact-pattern }} under ${{ inputs.artifact-dir }}" >&2
+            exit 1
+          fi
+          cp "$file" "${{ inputs.output-name }}"
+
+      - name: Upload to release
+        if: ${{ inputs.upload-to-release }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "${{ inputs.release-tag }}" "${{ inputs.output-name }}" --clobber
+
+      - name: Upload workflow artifact
+        if: ${{ !inputs.upload-to-release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.output-name }}
+          path: ${{ inputs.output-name }}
+          retention-days: 14
