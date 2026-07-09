@@ -1,8 +1,9 @@
 package com.pulseweaver.heartbeat.config
 
+import com.pulseweaver.heartbeat.platform.channelSuffix
 import java.util.prefs.Preferences
 
-private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat")
+private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat${channelSuffix()}")
 
 actual class ConfigStore actual constructor() {
     actual suspend fun load(): HeartbeatConfig =

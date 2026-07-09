@@ -97,16 +97,26 @@ dependencies {
 
 val appVersion = project.findProperty("appVersion")?.toString() ?: "1.0.0"
 
+// Dev builds ship as a separate app that installs alongside a release, with isolated
+// config/state/logs (see -Dpw.channel below). Release builds leave everything untouched.
+val isDevChannel = project.findProperty("appChannel") == "dev"
+
 compose.desktop {
     application {
         mainClass = "com.pulseweaver.heartbeat.MainKt"
 
+        if (isDevChannel) {
+            jvmArgs += "-Dpw.channel=dev"
+        }
+
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "PulseWeaver Companion"
+            packageName = if (isDevChannel) "PulseWeaver Companion Dev" else "PulseWeaver Companion"
             packageVersion = appVersion
 
             macOS {
+                bundleID = if (isDevChannel) "com.pulseweaver.companion.dev" else "com.pulseweaver.companion"
+
                 // The Companion's whole job is periodic network beats, so opt out of App Nap:
                 // otherwise macOS suspends the process (and its timers) once its window is hidden
                 // to the tray, silently stalling the heartbeat.

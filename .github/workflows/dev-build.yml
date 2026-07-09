@@ -4,14 +4,17 @@ name: Dev Build
 # Trigger from the Actions tab, pick a branch, then download the packages from
 # this run's artifacts. No tag, no GitHub Release. The Windows MSI and macOS
 # DMG bundle their own JRE, so the target machine needs nothing installed.
+#
+# These are built on the 'dev' channel (app-channel: dev), so each package
+# installs as a SEPARATE app ("PulseWeaver Companion Dev") alongside a release,
+# with its own config, saved state, and logs — testing a dev build never touches
+# a real install. Because dev is its own app, the version only has to stay
+# monotonic within the channel for dev-over-dev upgrades, so 1.0.<run_number>
+# (strictly higher each run) is all that's needed — notably a clean MSI upgrade
+# on Windows, which enforces version ordering and has no debug bypass.
 
 on:
   workflow_dispatch:
-    inputs:
-      app-version:
-        description: Version for packaging (numeric MAJOR.MINOR.PATCH — must be valid for MSI)
-        default: '1.0.0'
-        type: string
 
 concurrency:
   group: dev-build-${{ github.ref }}
@@ -62,5 +65,6 @@ jobs:
       artifact-dir: ${{ matrix.dir }}
       artifact-pattern: ${{ matrix.pattern }}
       output-name: PulseWeaver-Companion-${{ needs.label.outputs.ref }}-${{ matrix.suffix }}
-      app-version: ${{ inputs.app-version }}
+      app-version: 1.0.${{ github.run_number }}
+      app-channel: dev
     secrets: inherit

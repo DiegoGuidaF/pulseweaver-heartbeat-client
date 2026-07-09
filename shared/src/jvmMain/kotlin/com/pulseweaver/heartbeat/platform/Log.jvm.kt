@@ -55,16 +55,17 @@ private fun rotate(file: File) {
 private fun resolveLogFile(): File? {
     val os = System.getProperty("os.name").orEmpty().lowercase()
     val home = System.getProperty("user.home").orEmpty()
+    val suffix = channelSuffix()
     val dir =
         when {
-            os.contains("mac") -> File("$home/Library/Logs/PulseWeaver")
+            os.contains("mac") -> File("$home/Library/Logs/PulseWeaver$suffix")
             os.contains("win") -> {
                 val base = System.getenv("LOCALAPPDATA") ?: "$home\\AppData\\Local"
-                File("$base\\PulseWeaver\\logs")
+                File("$base\\PulseWeaver$suffix\\logs")
             }
             else -> {
                 val base = System.getenv("XDG_STATE_HOME")?.takeIf { it.isNotBlank() } ?: "$home/.local/state"
-                File("$base/pulseweaver")
+                File("$base/pulseweaver$suffix")
             }
         }
     return runCatching {

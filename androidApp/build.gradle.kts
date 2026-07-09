@@ -15,6 +15,9 @@ dependencies {
 }
 
 val appVersion = project.findProperty("appVersion")?.toString() ?: "1.0.0"
+// Dev builds install alongside a release under their own applicationId, keeping their
+// app data (config, saved state) isolated for free. Release builds are unaffected.
+val isDevChannel = project.findProperty("appChannel") == "dev"
 val versionParts = appVersion.split(".")
 // CI always passes -PappVersion; local dev builds don't. Use Int.MAX_VALUE for dev
 // so a debug APK can always be installed on a device that has a release version.
@@ -36,6 +39,10 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = computedVersionCode
         versionName = appVersion
+        if (isDevChannel) {
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+        }
     }
     packaging {
         resources {

@@ -31,6 +31,10 @@ on:
         description: Value for -PappVersion; a leading 'v' is stripped
         required: true
         type: string
+      app-channel:
+        description: Build channel for -PappChannel (e.g. 'dev'); empty means release
+        default: ''
+        type: string
       needs-keystore:
         description: Decode the Android signing keystore before building
         default: false
@@ -70,7 +74,8 @@ jobs:
           KEY_ALIAS: ${{ inputs.needs-keystore && secrets.KEY_ALIAS || '' }}
         run: |
           version="${{ inputs.app-version }}"
-          ./gradlew ${{ inputs.gradle-task }} -PappVersion="${version#v}" --stacktrace
+          channel="${{ inputs.app-channel }}"
+          ./gradlew ${{ inputs.gradle-task }} -PappVersion="${version#v}" ${channel:+-PappChannel="$channel"} --stacktrace
 
       - name: Collect artifact
         id: collect

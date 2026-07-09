@@ -1,11 +1,12 @@
 package com.pulseweaver.heartbeat.config
 
+import com.pulseweaver.heartbeat.platform.channelSuffix
 import com.pulseweaver.heartbeat.service.HeartbeatResult
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.prefs.Preferences
 
-private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat/result")
+private val prefs: Preferences = Preferences.userRoot().node("com/pulseweaver/heartbeat${channelSuffix()}/result")
 
 actual class ResultStore actual constructor() {
     // The desktop UI is driven directly by the in-process scheduler, so a single emission is enough.
