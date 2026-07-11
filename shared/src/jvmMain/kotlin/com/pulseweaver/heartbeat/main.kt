@@ -5,8 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -17,6 +20,9 @@ import androidx.compose.ui.window.rememberWindowState
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.Log
 import com.pulseweaver.heartbeat.service.HeartbeatResult
+import org.jetbrains.compose.resources.painterResource
+import pulseweaverheartbeat.shared.generated.resources.Res
+import pulseweaverheartbeat.shared.generated.resources.app_icon
 
 private val ActiveAmber = Color(0xFFFFA94D)
 private val StoppedGrey = Color(0xFF9E9E9E)
@@ -70,6 +76,7 @@ fun main() =
             onCloseRequest = { isWindowVisible = false },
             visible = isWindowVisible,
             title = "PulseWeaver Companion",
+            icon = painterResource(Res.drawable.app_icon),
             state = rememberWindowState(size = DpSize(460.dp, 720.dp)),
         ) {
             App(
@@ -80,24 +87,45 @@ fun main() =
         }
     }
 
-/** Draws a filled circle in the given colour as the system tray icon. */
+/** The logo's bolt polygon, in the artwork's 64×64 viewBox coordinates. */
+private val boltPoints =
+    listOf(
+        40f to 10f,
+        14f to 34f,
+        26f to 34f,
+        24f to 52f,
+        50f to 30f,
+        34f to 30f,
+    )
+
+/**
+ * Draws the PulseWeaver bolt tinted with the given status colour as the system tray icon.
+ * A single-colour silhouette stays legible at the ~16 px the OS renders tray icons at,
+ * where the full hexagon-mesh logo would turn to noise.
+ */
 private fun trayIcon(color: Color): BitmapPainter {
     val size = 32
     val bitmap = ImageBitmap(size, size)
-    val canvas =
-        androidx.compose.ui.graphics
-            .Canvas(bitmap)
+    val canvas = Canvas(bitmap)
     val paint =
-        androidx.compose.ui.graphics.Paint().apply {
+        Paint().apply {
             this.color = color
             isAntiAlias = true
         }
-    canvas.drawCircle(
-        center =
-            androidx.compose.ui.geometry
-                .Offset(size / 2f, size / 2f),
-        radius = size / 2f - 1f,
-        paint = paint,
-    )
+    val minX = boltPoints.minOf { it.first }
+    val maxX = boltPoints.maxOf { it.first }
+    val minY = boltPoints.minOf { it.second }
+    val maxY = boltPoints.maxOf { it.second }
+    val scale = (size - 2f) / maxOf(maxX - minX, maxY - minY)
+    val offsetX = (size - (maxX - minX) * scale) / 2f
+    val offsetY = (size - (maxY - minY) * scale) / 2f
+    val path = Path()
+    boltPoints.forEachIndexed { index, (x, y) ->
+        val px = (x - minX) * scale + offsetX
+        val py = (y - minY) * scale + offsetY
+        if (index == 0) path.moveTo(px, py) else path.lineTo(px, py)
+    }
+    path.close()
+    canvas.drawPath(path, paint)
     return BitmapPainter(bitmap)
 }

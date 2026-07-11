@@ -114,8 +114,29 @@ compose.desktop {
             packageName = if (isDevChannel) "PulseWeaver Companion Dev" else "PulseWeaver Companion"
             packageVersion = appVersion
 
+            windows {
+                menu = true
+                shortcut = true
+                menuGroup = "PulseWeaver"
+                // Permanent per-channel MSI identity: the release GUID makes newer MSIs
+                // upgrade in place, the dev GUID keeps the dev channel installing alongside.
+                // Changing either turns every future MSI into a separate product.
+                upgradeUuid =
+                    if (isDevChannel) {
+                        "DFC41FE5-5975-46C5-B86A-D81DAC327CC6"
+                    } else {
+                        "62351BA0-7280-4064-904B-CC9DA466A19E"
+                    }
+                iconFile.set(project.file("desktop-icons/pulseweaver.ico"))
+            }
+
+            linux {
+                iconFile.set(project.file("desktop-icons/pulseweaver.png"))
+            }
+
             macOS {
                 bundleID = if (isDevChannel) "com.pulseweaver.companion.dev" else "com.pulseweaver.companion"
+                iconFile.set(project.file("desktop-icons/pulseweaver.icns"))
 
                 // The Companion's whole job is periodic network beats, so opt out of App Nap:
                 // otherwise macOS suspends the process (and its timers) once its window is hidden
