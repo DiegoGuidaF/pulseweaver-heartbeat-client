@@ -59,7 +59,7 @@ jobs:
           distribution: zulu
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@v6.2.0
 
       - name: Decode keystore
         if: ${{ inputs.needs-keystore }}
