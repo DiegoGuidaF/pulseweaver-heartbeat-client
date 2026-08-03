@@ -3,6 +3,7 @@ package com.pulseweaver.heartbeat.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.pulseweaver.heartbeat.platform.sleepAwareTimeSource
 import kotlin.time.Duration
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
@@ -18,10 +19,14 @@ import kotlin.time.TimeSource
  * Only a real trip to the background starts the grace-period clock. The platform entry
  * point decides what counts as one by calling [onEnteredBackground]; a configuration
  * change must not.
+ *
+ * Timing runs on [sleepAwareTimeSource], not [TimeSource.Monotonic], so the grace period
+ * keeps elapsing while the device sleeps — see that declaration for why the distinction
+ * decides whether the lock engages at all.
  */
 object AuthSession {
     /** Swapped for a `TestTimeSource` in tests. */
-    internal var timeSource: TimeSource = TimeSource.Monotonic
+    internal var timeSource: TimeSource = sleepAwareTimeSource
 
     private var lastAuthMark: TimeMark? = null
     private var backgroundedAt: TimeMark? = null

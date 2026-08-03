@@ -1,5 +1,6 @@
 package com.pulseweaver.heartbeat.ui
 
+import com.pulseweaver.heartbeat.platform.sleepAwareTimeSource
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -8,7 +9,6 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TestTimeSource
-import kotlin.time.TimeSource
 
 private val GRACE = 60.seconds
 
@@ -25,7 +25,7 @@ class AuthSessionTest {
     @AfterTest
     fun tearDown() {
         AuthSession.lock()
-        AuthSession.timeSource = TimeSource.Monotonic
+        AuthSession.timeSource = sleepAwareTimeSource
     }
 
     @Test
