@@ -6,5 +6,5 @@ actual object AutoStart {
 
     actual fun isEnabled(): Boolean = false
 
-    actual fun setEnabled(enabled: Boolean) = Unit
+    actual fun setEnabled(enabled: Boolean): Boolean = false
 }

@@ -18,5 +18,11 @@ expect object AutoStart {
 
     fun isEnabled(): Boolean
 
-    fun setEnabled(enabled: Boolean)
+    /**
+     * Registers or removes the login item, returning whether the OS accepted the
+     * change. A false return is the only signal the caller gets — the details go
+     * to the log — so the UI can say the toggle didn't take instead of silently
+     * snapping back.
+     */
+    fun setEnabled(enabled: Boolean): Boolean
 }

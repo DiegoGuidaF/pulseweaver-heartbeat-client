@@ -482,6 +482,7 @@ fun HeartbeatScreen(
             // ── Startup card (installed desktop builds only) ───────────────
             if (AutoStart.isAvailable()) {
                 var autoStartEnabled by remember { mutableStateOf(AutoStart.isEnabled()) }
+                var autoStartFailed by remember { mutableStateOf(false) }
                 Card(
                     modifier = Modifier.fillMaxWidth().testTag(TestTags.STARTUP_CARD),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -504,10 +505,18 @@ fun HeartbeatScreen(
                             Switch(
                                 checked = autoStartEnabled,
                                 onCheckedChange = {
-                                    AutoStart.setEnabled(it)
+                                    autoStartFailed = !AutoStart.setEnabled(it)
                                     autoStartEnabled = AutoStart.isEnabled()
                                 },
                                 modifier = Modifier.testTag(TestTags.AUTO_START_SWITCH),
+                            )
+                        }
+                        if (autoStartFailed) {
+                            Text(
+                                "Couldn't update the login item — see companion.log for the reason.",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AppColors.ErrorRed,
+                                modifier = Modifier.testTag(TestTags.AUTO_START_ERROR),
                             )
                         }
                     }
