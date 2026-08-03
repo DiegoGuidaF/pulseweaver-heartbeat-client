@@ -2,7 +2,9 @@ package com.pulseweaver.heartbeat.platform
 
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class AutoStartTest {
     @Test
@@ -60,11 +62,38 @@ class AutoStartTest {
     }
 
     @Test
+    fun startupApprovedIsDisabled_readsTheStateByteWindowsWrites() {
+        // reg dumps the binary value as one hex run after the type column; the
+        // first byte is even while Windows still honours the entry.
+        val enabled = "    PulseWeaver Companion    REG_BINARY    020000000000000000000000"
+        val disabled = "    PulseWeaver Companion    REG_BINARY    030000000000000000000000"
+        assertFalse(startupApprovedIsDisabled(enabled))
+        assertTrue(startupApprovedIsDisabled(disabled))
+    }
+
+    @Test
+    fun startupApprovedIsDisabled_treatsAnUnreadableDumpAsEnabled() {
+        // No approval record (or output reg never produced) must not read as
+        // "disabled" — the Run value stays the primary answer.
+        assertFalse(startupApprovedIsDisabled(""))
+        assertFalse(startupApprovedIsDisabled("ERROR: The system was unable to find the specified registry key"))
+    }
+
+    @Test
+    fun startupSettings_availableOnlyWhereTheOsHasThatScreen() {
+        // Windows and macOS expose one; Linux has no dependable equivalent.
+        assertEquals(isWindows || isMac, StartupSettings.isAvailable())
+    }
+
+    @Test
     fun unavailableUnderTests_becauseLauncherIsPlainJava() {
         // Tests run under a plain `java` process, never a packaged launcher, so
         // the capability must gate itself off (and the UI hides the toggle).
         assertFalse(AutoStart.isAvailable())
         assertFalse(AutoStart.isEnabled())
+        // Both directions refuse, so a dev run can never record a decision that
+        // would then suppress the default on a real install sharing these prefs.
         assertFalse(AutoStart.setEnabled(true))
+        assertFalse(AutoStart.setEnabled(false))
     }
 }

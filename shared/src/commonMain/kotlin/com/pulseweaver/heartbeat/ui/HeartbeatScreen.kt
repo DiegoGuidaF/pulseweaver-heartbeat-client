@@ -2,6 +2,7 @@ package com.pulseweaver.heartbeat.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -54,6 +56,7 @@ import com.pulseweaver.heartbeat.platform.BatteryOptimization
 import com.pulseweaver.heartbeat.platform.BiometricAuth
 import com.pulseweaver.heartbeat.platform.Log
 import com.pulseweaver.heartbeat.platform.NetworkMonitor
+import com.pulseweaver.heartbeat.platform.StartupSettings
 import com.pulseweaver.heartbeat.platform.UrlOpener
 import com.pulseweaver.heartbeat.platform.currentEpochMs
 import com.pulseweaver.heartbeat.platform.currentTimeForDisplay
@@ -482,7 +485,20 @@ fun HeartbeatScreen(
             // ── Startup card (installed desktop builds only) ───────────────
             if (AutoStart.isAvailable()) {
                 var autoStartEnabled by remember { mutableStateOf(AutoStart.isEnabled()) }
-                var autoStartFailed by remember { mutableStateOf(false) }
+                // The value the user asked for, kept only while the OS refuses it,
+                // so the error text and its retry both know what to say and redo.
+                var rejectedTarget by remember { mutableStateOf<Boolean?>(null) }
+                val applyAutoStart = { target: Boolean ->
+                    rejectedTarget = if (AutoStart.setEnabled(target)) null else target
+                    autoStartEnabled = AutoStart.isEnabled()
+                }
+                // The OS keeps its own switch for this entry, so the app's view of
+                // it goes stale the moment the user changes it there. Coming back
+                // to the window is the cue to re-read.
+                val windowFocused = LocalWindowInfo.current.isWindowFocused
+                LaunchedEffect(windowFocused) {
+                    if (windowFocused) autoStartEnabled = AutoStart.isEnabled()
+                }
                 Card(
                     modifier = Modifier.fillMaxWidth().testTag(TestTags.STARTUP_CARD),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
@@ -504,20 +520,41 @@ fun HeartbeatScreen(
                             }
                             Switch(
                                 checked = autoStartEnabled,
-                                onCheckedChange = {
-                                    autoStartFailed = !AutoStart.setEnabled(it)
-                                    autoStartEnabled = AutoStart.isEnabled()
-                                },
+                                onCheckedChange = applyAutoStart,
                                 modifier = Modifier.testTag(TestTags.AUTO_START_SWITCH),
                             )
                         }
-                        if (autoStartFailed) {
-                            Text(
-                                "Couldn't update the login item — see companion.log for the reason.",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = AppColors.ErrorRed,
-                                modifier = Modifier.testTag(TestTags.AUTO_START_ERROR),
-                            )
+                        rejectedTarget?.let { target ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Couldn't ${if (target) "add" else "remove"} the login item — see companion.log.",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = AppColors.ErrorRed,
+                                    modifier = Modifier.weight(1f).testTag(TestTags.AUTO_START_ERROR),
+                                )
+                                TextButton(
+                                    onClick = { applyAutoStart(target) },
+                                    modifier = Modifier.testTag(TestTags.AUTO_START_RETRY),
+                                ) {
+                                    Text("Try again")
+                                }
+                            }
+                        }
+                        if (StartupSettings.isAvailable()) {
+                            TextButton(
+                                onClick = { StartupSettings.open() },
+                                contentPadding = PaddingValues(0.dp),
+                                modifier = Modifier.testTag(TestTags.STARTUP_SETTINGS_LINK),
+                            ) {
+                                Text(
+                                    "Open the system startup settings ↗",
+                                    style = MaterialTheme.typography.labelSmall,
+                                )
+                            }
                         }
                     }
                 }

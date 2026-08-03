@@ -23,6 +23,18 @@ expect object AutoStart {
      * change. A false return is the only signal the caller gets — the details go
      * to the log — so the UI can say the toggle didn't take instead of silently
      * snapping back.
+     *
+     * Every call is a decision: an accepted one also records that the user has
+     * answered the start-at-login question, which is what stops
+     * [applyDefaultIfUndecided] from ever overriding an opt-out.
      */
     fun setEnabled(enabled: Boolean): Boolean
+
+    /**
+     * Enrols an install that was never asked — one that came up already
+     * configured, so it never passed through setup. A registration the OS
+     * rejects leaves the question open, so the next launch tries again rather
+     * than silently forfeiting the default.
+     */
+    fun applyDefaultIfUndecided()
 }

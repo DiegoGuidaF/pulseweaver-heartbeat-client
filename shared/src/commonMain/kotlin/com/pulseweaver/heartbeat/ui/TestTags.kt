@@ -21,6 +21,8 @@ object TestTags {
     const val STARTUP_CARD = "startup_card"
     const val AUTO_START_SWITCH = "auto_start_switch"
     const val AUTO_START_ERROR = "auto_start_error"
+    const val AUTO_START_RETRY = "auto_start_retry"
+    const val STARTUP_SETTINGS_LINK = "startup_settings_link"
     const val THEME_CHIP_AUTO = "theme_chip_auto"
     const val THEME_CHIP_LIGHT = "theme_chip_light"
     const val THEME_CHIP_DARK = "theme_chip_dark"
@@ -35,4 +37,5 @@ object TestTags {
     const val SETUP_HOST_CONFIRM = "setup_host_confirm"
     const val SETUP_ERROR_TEXT = "setup_error_text"
     const val SETUP_ERROR_DETAIL = "setup_error_detail"
+    const val SETUP_START_AT_LOGIN = "setup_start_at_login"
 }

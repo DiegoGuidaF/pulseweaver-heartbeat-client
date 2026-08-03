@@ -17,7 +17,6 @@ import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.pulseweaver.heartbeat.platform.AutoStart
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.Log
 import com.pulseweaver.heartbeat.service.HeartbeatResult
@@ -41,7 +40,6 @@ fun main(args: Array<String>) =
 
         LaunchedEffect(Unit) {
             Log.i("App", "PulseWeaver Companion started on ${System.getProperty("os.name")}")
-            AutoStart.ensureDefaultEnabled()
         }
 
         val trayColor =

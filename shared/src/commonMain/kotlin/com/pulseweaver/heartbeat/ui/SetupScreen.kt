@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
+import com.pulseweaver.heartbeat.platform.AutoStart
 import com.pulseweaver.heartbeat.platform.Clipboard
 import com.pulseweaver.heartbeat.platform.QrScanner
 import com.pulseweaver.heartbeat.service.PairingCodeCheck
@@ -56,6 +59,12 @@ fun SetupScreen(
     val configStore = remember { ConfigStore() }
     val canScanQr = remember { QrScanner.isAvailable() }
     val canPaste = remember { Clipboard.isAvailable() }
+    val canAutoStart = remember { AutoStart.isAvailable() }
+    // Pre-checked: the Companion only holds this device's authorization while it
+    // runs, so an install that doesn't come back after a reboot stops working.
+    // Activation is the one moment the user has just been told that, which makes
+    // it the honest place to ask rather than enrolling behind their back.
+    var startAtLogin by remember { mutableStateOf(true) }
 
     // Local, network-free check used only to reassure the user which server a
     // recognized code points at; the actual gating happens inside claim().
@@ -191,6 +200,27 @@ fun SetupScreen(
             )
         }
 
+        if (canAutoStart) {
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(TestTags.SETUP_START_AT_LOGIN),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = startAtLogin, onCheckedChange = { startAtLogin = it })
+                Column {
+                    Text("Start when I sign in", style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        "Keeps this device authorized after a reboot",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+
         Spacer(Modifier.height(16.dp))
 
         Button(
@@ -211,6 +241,7 @@ fun SetupScreen(
                                     settingsLocked = r.appSettingsLocked,
                                 )
                             configStore.save(config)
+                            if (canAutoStart) AutoStart.setEnabled(startAtLogin)
                             onProvisioningComplete(config)
                         }
                         is RegistrationResult.Error -> {

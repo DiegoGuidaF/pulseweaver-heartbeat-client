@@ -6,8 +6,8 @@ import java.nio.file.Paths
 import java.util.prefs.Preferences
 
 private val osName = System.getProperty("os.name").lowercase()
-private val isWindows = "win" in osName
-private val isMac = "mac" in osName
+internal val isWindows = "win" in osName
+internal val isMac = "mac" in osName
 
 // The dev channel registers under its own names so a dev install and a release
 // install manage independent login items, mirroring their separate identities.
@@ -18,14 +18,21 @@ private val entryId = "com.pulseweaver.companion" + channelSuffix().replace('-',
 
 private const val WINDOWS_RUN_KEY = """HKCU\Software\Microsoft\Windows\CurrentVersion\Run"""
 
+// Where Windows' own Startup-apps UI records an entry the user switched off. It
+// leaves the Run value untouched, so the Run value alone reports entries that
+// never actually run.
+private const val WINDOWS_STARTUP_APPROVED_KEY =
+    """HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run"""
+
 // A .reg file spells the hive out in full; the abbreviation is only understood
 // as a `reg` command-line argument.
 private val windowsRunKeyPath = WINDOWS_RUN_KEY.replaceFirst("HKCU", "HKEY_CURRENT_USER")
 
-// Versioned marker: bumping the suffix re-runs the one-time enrolment on installs
-// an earlier build already marked, which is how a machine left unregistered by a
-// broken registration gets another chance.
-private const val ENROLLED_KEY = "autoStartEnrolled.v2"
+// Marks that the start-at-login question has been answered — by the user, or by
+// the default applied to an install that never saw setup. Versioned: bumping the
+// suffix re-asks installs an earlier build already marked, which is how a machine
+// left unregistered by a broken registration gets another chance.
+private const val DECIDED_KEY = "autoStartDecided.v2"
 
 actual object AutoStart {
     private val prefs = Preferences.userRoot().node("com/pulseweaver/heartbeat${channelSuffix()}")
@@ -50,13 +57,31 @@ actual object AutoStart {
     actual fun isEnabled(): Boolean {
         if (launcher == null) return false
         return when {
-            isWindows -> reg("query", WINDOWS_RUN_KEY, "/v", entryDisplayName).ok
+            isWindows -> reg("query", WINDOWS_RUN_KEY, "/v", entryDisplayName).ok && !disabledByWindows()
             isMac -> Files.exists(macPlistPath)
             else -> Files.exists(linuxDesktopPath)
         }
     }
 
     actual fun setEnabled(enabled: Boolean): Boolean {
+        if (launcher == null) return false
+        // Enabling always rewrites the entry, which repairs a launcher path left
+        // stale by a reinstall; removing one that was never registered is already
+        // done, and asking the OS to delete it would only log a spurious failure.
+        val ok = if (!enabled && !isEnabled()) true else applyRegistration(enabled)
+        if (ok) {
+            prefs.putBoolean(DECIDED_KEY, true)
+            prefs.flush()
+        }
+        return ok
+    }
+
+    actual fun applyDefaultIfUndecided() {
+        if (launcher == null || prefs.getBoolean(DECIDED_KEY, false)) return
+        setEnabled(true)
+    }
+
+    private fun applyRegistration(enabled: Boolean): Boolean {
         val launcher = launcher ?: return false
         var detail = ""
         val ok =
@@ -100,18 +125,9 @@ actual object AutoStart {
         return ok
     }
 
-    /**
-     * Applies the enabled-by-default policy once per install, retrying on later
-     * launches until the OS accepts it: only a registration that succeeded marks
-     * the install enrolled, so a rejected one never silently costs the default.
-     * Once marked, the OS-level registration is the single source of truth, so a
-     * user who opts out is never re-enrolled.
-     */
-    fun ensureDefaultEnabled() {
-        if (launcher == null || prefs.getBoolean(ENROLLED_KEY, false)) return
-        if (!setEnabled(true)) return
-        prefs.putBoolean(ENROLLED_KEY, true)
-        prefs.flush()
+    private fun disabledByWindows(): Boolean {
+        val outcome = reg("query", WINDOWS_STARTUP_APPROVED_KEY, "/v", entryDisplayName)
+        return outcome.ok && startupApprovedIsDisabled(outcome.output)
     }
 
     /**
@@ -175,6 +191,21 @@ internal fun launchAgentPlist(
     </dict>
     </plist>
     """.trimIndent() + "\n"
+
+/**
+ * Reads the enabled bit out of a `reg query` dump of a StartupApproved value.
+ * The value is binary and its first byte carries the state: even while the entry
+ * is enabled, odd once the user switches it off in Settings or Task Manager.
+ * An unreadable dump counts as enabled — the Run value stays the primary answer.
+ */
+internal fun startupApprovedIsDisabled(regQueryOutput: String): Boolean {
+    val hex =
+        regQueryOutput
+            .substringAfter("REG_BINARY", "")
+            .trim()
+            .takeWhile { !it.isWhitespace() }
+    return hex.take(2).toIntOrNull(radix = 16)?.let { it % 2 != 0 } ?: false
+}
 
 /**
  * A `.reg` file adding one `REG_SZ` under the Run key. Registry files are CRLF

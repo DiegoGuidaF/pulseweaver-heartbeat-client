@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.ThemeMode
+import com.pulseweaver.heartbeat.platform.AutoStart
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.service.HeartbeatResult
 import com.pulseweaver.heartbeat.service.HeartbeatUtils
@@ -40,6 +41,10 @@ fun App(
         themeMode = config.themeMode
         screenState =
             if (HeartbeatUtils.isConfigValid(config.serverUrl, config.apiKey)) {
+                // Setup is where the start-at-login question gets asked, so an
+                // install that opens straight into the main screen has never
+                // answered it and falls back to the default.
+                AutoStart.applyDefaultIfUndecided()
                 ScreenState.Main
             } else {
                 ScreenState.Setup
