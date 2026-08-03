@@ -18,6 +18,8 @@ object TestTags {
     const val APPEARANCE_CARD = "appearance_card"
     const val RELIABILITY_CARD = "reliability_card"
     const val RELIABILITY_ALLOW_BUTTON = "reliability_allow_button"
+    const val STARTUP_CARD = "startup_card"
+    const val AUTO_START_SWITCH = "auto_start_switch"
     const val THEME_CHIP_AUTO = "theme_chip_auto"
     const val THEME_CHIP_LIGHT = "theme_chip_light"
     const val THEME_CHIP_DARK = "theme_chip_dark"

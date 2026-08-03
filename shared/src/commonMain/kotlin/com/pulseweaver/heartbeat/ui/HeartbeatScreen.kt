@@ -48,6 +48,7 @@ import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
 import com.pulseweaver.heartbeat.config.ResultStore
 import com.pulseweaver.heartbeat.config.ThemeMode
+import com.pulseweaver.heartbeat.platform.AutoStart
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.BatteryOptimization
 import com.pulseweaver.heartbeat.platform.BiometricAuth
@@ -468,6 +469,41 @@ fun HeartbeatScreen(
                     enabled = config.serverUrl.isNotEmpty(),
                 ) {
                     Text("Open Server URL ↗")
+                }
+            }
+
+            // ── Startup card (installed desktop builds only) ───────────────
+            if (AutoStart.isAvailable()) {
+                var autoStartEnabled by remember { mutableStateOf(AutoStart.isEnabled()) }
+                Card(
+                    modifier = Modifier.fillMaxWidth().testTag(TestTags.STARTUP_CARD),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+                ) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Startup", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text("Start at login", style = MaterialTheme.typography.bodyMedium)
+                                Text(
+                                    "Opens minimized to the tray",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Switch(
+                                checked = autoStartEnabled,
+                                onCheckedChange = {
+                                    AutoStart.setEnabled(it)
+                                    autoStartEnabled = AutoStart.isEnabled()
+                                },
+                                modifier = Modifier.testTag(TestTags.AUTO_START_SWITCH),
+                            )
+                        }
+                    }
                 }
             }
 

@@ -17,6 +17,7 @@ import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import com.pulseweaver.heartbeat.platform.AutoStart
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.Log
 import com.pulseweaver.heartbeat.service.HeartbeatResult
@@ -28,15 +29,19 @@ private val ActiveAmber = Color(0xFFFFA94D)
 private val StoppedGrey = Color(0xFF9E9E9E)
 private val ErrorRed = Color(0xFFFA5252)
 
-fun main() =
+fun main(args: Array<String>) =
     application {
+        // Auto-started login items launch with --minimized so sign-in doesn't
+        // pop a window; the app sits in the tray until asked for.
+        val startMinimized = "--minimized" in args
         val scheduler = remember { BackgroundScheduler() }
         var lastResult by remember { mutableStateOf<HeartbeatResult?>(null) }
-        var isWindowVisible by remember { mutableStateOf(true) }
+        var isWindowVisible by remember { mutableStateOf(!startMinimized) }
         var sendNowTrigger by remember { mutableStateOf(0) }
 
         LaunchedEffect(Unit) {
             Log.i("App", "PulseWeaver Companion started on ${System.getProperty("os.name")}")
+            AutoStart.ensureDefaultEnabled()
         }
 
         val trayColor =
@@ -55,6 +60,8 @@ fun main() =
         Tray(
             icon = remember(trayColor) { trayIcon(trayColor) },
             tooltip = trayTooltip,
+            // Double-click on Windows; macOS keeps the click-opens-menu convention.
+            onAction = { isWindowVisible = true },
             menu = {
                 Item(
                     text = lastResult?.let { if (it.success) "✓ ${it.message}" else "✗ ${it.message}" } ?: "Idle",
