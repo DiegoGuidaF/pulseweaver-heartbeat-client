@@ -12,6 +12,15 @@ name: Dev Build
 # monotonic within the channel for dev-over-dev upgrades, so 1.0.<run_number>
 # (strictly higher each run) is all that's needed — notably a clean MSI upgrade
 # on Windows, which enforces version ordering and has no debug bypass.
+#
+# Android builds the release variant, signed with the dev channel's own keystore.
+# Android refuses an update whose signing key differs from the installed app's,
+# and a debug APK is signed by a throwaway keystore the runner generates for that
+# run, so no two dev APKs would ever install over each other. The key is separate
+# from the release one on purpose: this workflow builds any branch on demand and
+# Gradle runs that branch's scripts, so the key it holds must not be able to sign
+# an update for a real install. The '.dev' applicationId suffix is what keeps the
+# dev app itself separate from a release.
 
 on:
   workflow_dispatch:
@@ -39,9 +48,12 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-latest
-            task: ':androidApp:assembleDebug'
-            dir: androidApp/build/outputs/apk/debug
-            pattern: '*.apk'
+            task: ':androidApp:assembleRelease'
+            dir: androidApp/build/outputs/apk/release
+            # Matches only the signed APK; without the keystore AGP emits
+            # '*-release-unsigned.apk' and the run fails instead of publishing
+            # something no device will install.
+            pattern: '*-release.apk'
             suffix: android.apk
           - runs-on: ubuntu-latest
             task: ':shared:packageDeb'
@@ -67,4 +79,10 @@ jobs:
       output-name: PulseWeaver-Companion-${{ needs.label.outputs.ref }}-${{ matrix.suffix }}
       app-version: 1.0.${{ github.run_number }}
       app-channel: dev
-    secrets: inherit
+      keystore: ${{ matrix.suffix == 'android.apk' && 'dev' || '' }}
+    # Only the dev key is passed down; 'secrets: inherit' would put the release
+    # key inside a build of an arbitrary branch.
+    secrets:
+      DEV_KEYSTORE_BASE64: ${{ secrets.DEV_KEYSTORE_BASE64 }}
+      DEV_KEYSTORE_PASSWORD: ${{ secrets.DEV_KEYSTORE_PASSWORD }}
+      DEV_KEY_ALIAS: ${{ secrets.DEV_KEY_ALIAS }}

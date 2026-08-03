@@ -35,10 +35,15 @@ on:
         description: Build channel for -PappChannel (e.g. 'dev'); empty means release
         default: ''
         type: string
-      needs-keystore:
-        description: Decode the Android signing keystore before building
-        default: false
-        type: boolean
+      keystore:
+        description: >-
+          Which Android signing key to build with: 'release' for the production
+          key, 'dev' for the dev channel's own key, '' to skip signing. The two
+          keys are deliberately separate — a dev build runs unreviewed branch
+          code, so it must never hold the key that can sign an update for a real
+          install.
+        default: ''
+        type: string
       upload-to-release:
         description: Attach to a GitHub Release instead of workflow artifacts
         default: false
@@ -47,6 +52,21 @@ on:
         description: Release tag to upload to (when upload-to-release is true)
         default: ''
         type: string
+    # Declared so a caller can hand over one key pair only. 'secrets: inherit'
+    # would give every caller both, which defeats the point of separate keys.
+    secrets:
+      KEYSTORE_BASE64:
+        required: false
+      KEYSTORE_PASSWORD:
+        required: false
+      KEY_ALIAS:
+        required: false
+      DEV_KEYSTORE_BASE64:
+        required: false
+      DEV_KEYSTORE_PASSWORD:
+        required: false
+      DEV_KEY_ALIAS:
+        required: false
 
 jobs:
   build:
@@ -62,16 +82,23 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6.2.0
 
       - name: Decode keystore
-        if: ${{ inputs.needs-keystore }}
+        if: ${{ inputs.keystore != '' }}
         shell: bash
-        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$GITHUB_WORKSPACE/release.keystore"
+        env:
+          KEYSTORE_BASE64: ${{ inputs.keystore == 'dev' && secrets.DEV_KEYSTORE_BASE64 || secrets.KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "No keystore secret configured for the '${{ inputs.keystore }}' key" >&2
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$GITHUB_WORKSPACE/signing.keystore"
 
       - name: Build package
         shell: bash
         env:
-          KEYSTORE_FILE: ${{ inputs.needs-keystore && format('{0}/release.keystore', github.workspace) || '' }}
-          KEYSTORE_PASSWORD: ${{ inputs.needs-keystore && secrets.KEYSTORE_PASSWORD || '' }}
-          KEY_ALIAS: ${{ inputs.needs-keystore && secrets.KEY_ALIAS || '' }}
+          KEYSTORE_FILE: ${{ inputs.keystore != '' && format('{0}/signing.keystore', github.workspace) || '' }}
+          KEYSTORE_PASSWORD: ${{ inputs.keystore == 'dev' && secrets.DEV_KEYSTORE_PASSWORD || inputs.keystore == 'release' && secrets.KEYSTORE_PASSWORD || '' }}
+          KEY_ALIAS: ${{ inputs.keystore == 'dev' && secrets.DEV_KEY_ALIAS || inputs.keystore == 'release' && secrets.KEY_ALIAS || '' }}
         run: |
           version="${{ inputs.app-version }}"
           channel="${{ inputs.app-channel }}"

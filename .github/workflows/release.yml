@@ -107,7 +107,7 @@ jobs:
       artifact-pattern: '*.apk'
       output-name: PulseWeaver-Companion-${{ github.ref_name }}-android.apk
       app-version: ${{ github.ref_name }}
-      needs-keystore: true
+      keystore: release
       upload-to-release: true
       release-tag: ${{ github.ref_name }}
     secrets: inherit
