@@ -13,6 +13,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.runComposeUiTest
+import com.pulseweaver.heartbeat.BuildInfo
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,7 @@ import kotlinx.coroutines.SupervisorJob
 import java.util.prefs.Preferences
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 /**
  * Basic UI smoke tests for HeartbeatScreen.
@@ -69,6 +71,23 @@ class HeartbeatScreenUiTest {
             // These cards may be below the fold — scroll to them first
             onNodeWithTag(TestTags.SCHEDULE_CARD).performScrollTo().assertIsDisplayed()
             onNodeWithTag(TestTags.APPEARANCE_CARD).performScrollTo().assertIsDisplayed()
+        }
+
+    @Test
+    fun buildInfoShowsVersionAndCommit() =
+        runComposeUiTest {
+            setContent {
+                MaterialTheme(colorScheme = lightColorScheme()) {
+                    HeartbeatScreen(scheduler = scheduler)
+                }
+            }
+
+            // A test run is never a release build, so the line carries the channel and a commit
+            // on top of the version — the whole point of the dev-build identity.
+            onNodeWithTag(TestTags.BUILD_INFO).performScrollTo().assertIsDisplayed()
+            onNodeWithTag(TestTags.BUILD_INFO).assertTextEquals(BuildInfo.display)
+            assertTrue(BuildInfo.display.startsWith("v${BuildInfo.version}-${BuildInfo.channel}"))
+            assertTrue(BuildInfo.commit.isNotEmpty(), "non-release build should carry a commit")
         }
 
     @Test

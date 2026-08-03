@@ -44,8 +44,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.pulseweaver.heartbeat.BuildInfo
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
 import com.pulseweaver.heartbeat.config.ResultStore
@@ -620,6 +622,17 @@ fun HeartbeatScreen(
                     }
                 }
             }
+
+            // ── Build identity ─────────────────────────────────────────────
+            // Below the fold on a phone viewport, which keeps it out of the doc screenshots
+            // that DocScreenshotsTest captures — otherwise every commit would rewrite the PNGs.
+            Text(
+                BuildInfo.display,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().testTag(TestTags.BUILD_INFO),
+            )
         }
     }
 }

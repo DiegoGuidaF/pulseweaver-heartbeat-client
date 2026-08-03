@@ -76,6 +76,14 @@ interval, and the `Δ prev` column flags when the gap between heartbeats is cree
 address lease (so you can raise the interval or the lease before access drops). See
 [Verifying a device is connected](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#verifying-a-device-is-connected).
 
+## Which build am I running?
+
+Scroll to the bottom of the main screen. A release shows its version (`v1.4.2`); anything
+else adds the channel and the commit it was built from — `v1.0.57-dev · a1b2c3d` for a
+[dev build](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/README.md), `-local` for
+one you built yourself. Quote that line when reporting a bug: dev packages are versioned by
+CI run number, so the commit is the only thing that identifies them.
+
 ## Permissions, privacy & key storage
 
 **Android permissions.** The app requests only what the heartbeat needs:

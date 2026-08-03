@@ -26,6 +26,7 @@ object TestTags {
     const val THEME_CHIP_AUTO = "theme_chip_auto"
     const val THEME_CHIP_LIGHT = "theme_chip_light"
     const val THEME_CHIP_DARK = "theme_chip_dark"
+    const val BUILD_INFO = "build_info"
 
     // SetupScreen
     const val SETUP_SCREEN = "setup_screen"
