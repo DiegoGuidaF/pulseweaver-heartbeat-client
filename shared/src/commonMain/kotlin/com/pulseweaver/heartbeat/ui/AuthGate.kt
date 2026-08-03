@@ -23,9 +23,9 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.platform.BiometricAuth
-import kotlin.time.TimeSource
+import kotlin.time.Duration.Companion.seconds
 
-private const val GRACE_PERIOD_SECONDS = 60L
+private val GRACE_PERIOD = 60.seconds
 
 /**
  * Wraps [content] with an optional biometric lock screen.
@@ -34,8 +34,12 @@ private const val GRACE_PERIOD_SECONDS = 60L
  *
  * On mobile, reads [biometricEnabled] from [ConfigStore] on each app open. If enabled:
  * - Shows a biometric prompt before revealing the UI on every cold open.
- * - Re-prompts when the app returns from background and more than [GRACE_PERIOD_SECONDS]
- *   have elapsed since the last successful authentication.
+ * - Re-prompts when the app returns from background and more than [GRACE_PERIOD] has
+ *   elapsed since the last successful authentication.
+ *
+ * The unlock itself is held by [AuthSession], not by this composable, so an Activity
+ * recreation (rotation, theme change) re-enters an already-unlocked session instead of
+ * prompting again.
  *
  * Authentication is driven by [authSession]: incrementing it starts a new auth attempt.
  * This covers initial open, "Try Again" after failure, and grace-period re-auth uniformly.
@@ -47,48 +51,44 @@ fun AuthGate(content: @Composable () -> Unit) {
         return
     }
 
-    // Backing state objects captured directly in the lifecycle observer lambda
-    // so it always reads current values, not values captured at composition time.
-    val isAuthenticatedState = remember { mutableStateOf(false) }
-    val lastAuthMarkState = remember { mutableStateOf<TimeSource.Monotonic.ValueTimeMark?>(null) }
+    // Backing state object captured directly in the lifecycle observer lambda
+    // so it always reads the current value, not the value captured at composition time.
     val authSessionState = remember { mutableStateOf(0) }
-
-    var isAuthenticated by isAuthenticatedState
-    var lastAuthMark by lastAuthMarkState
     var authSession by authSessionState
     var authFailed by remember { mutableStateOf(false) }
 
     val configStore = remember { ConfigStore() }
+
+    // Settled during composition rather than in an effect: when the system destroyed the
+    // Activity while backgrounded, the new composition must already know it is locked, or
+    // it paints the protected content for a frame before the prompt arrives.
+    remember { if (AuthSession.shouldRelock(GRACE_PERIOD)) AuthSession.lock() }
 
     // Single auth effect — re-runs on initial open, retry, and grace-period expiry.
     LaunchedEffect(authSession) {
         authFailed = false
         val config = configStore.load()
         if (!config.biometricEnabled) {
-            isAuthenticated = true
+            AuthSession.markUnlocked()
             return@LaunchedEffect
         }
-        isAuthenticated = false // hide content while prompt is showing
+        if (AuthSession.isUnlocked) return@LaunchedEffect // survived a configuration change
         val success = BiometricAuth.authenticate("Unlock PulseWeaver Companion")
         if (success) {
-            isAuthenticated = true
-            lastAuthMark = TimeSource.Monotonic.markNow()
+            AuthSession.markUnlocked()
         } else {
             authFailed = true
         }
     }
 
     // Re-authenticate when returning from background after the grace period.
-    // Reads state values directly (not via delegate) to see current values at observer call time.
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer =
             LifecycleEventObserver { _, event ->
-                if (event == Lifecycle.Event.ON_RESUME && isAuthenticatedState.value) {
-                    val mark = lastAuthMarkState.value
-                    if (mark != null && mark.elapsedNow().inWholeSeconds > GRACE_PERIOD_SECONDS) {
-                        authSessionState.value++
-                    }
+                if (event == Lifecycle.Event.ON_RESUME && AuthSession.shouldRelock(GRACE_PERIOD)) {
+                    AuthSession.lock()
+                    authSessionState.value++
                 }
             }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -96,7 +96,7 @@ fun AuthGate(content: @Composable () -> Unit) {
     }
 
     when {
-        isAuthenticated -> content()
+        AuthSession.isUnlocked -> content()
         authFailed -> {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
