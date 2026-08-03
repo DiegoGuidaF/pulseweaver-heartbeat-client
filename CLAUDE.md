@@ -42,7 +42,7 @@ Kotlin Multiplatform with Compose Multiplatform UI. Two Gradle modules:
 | Source set | Purpose |
 |---|---|
 | `commonMain` | UI, business logic, HTTP client, config — the bulk of the app |
-| `androidMain` | WorkManager scheduler, biometric auth, Android config store |
+| `androidMain` | Alarm-chain scheduler, network callbacks, biometric auth, Android config store |
 | `jvmMain` | Desktop entry point, system tray, JVM timer scheduler |
 | `iosMain` | iOS HTTP engine (Ktor Darwin) |
 | `commonTest` | Unit tests, Ktor MockEngine tests, compose UI tests |
@@ -58,7 +58,7 @@ Kotlin Multiplatform with Compose Multiplatform UI. Two Gradle modules:
 | `ui/` | Compose screens (`HeartbeatScreen`, `AuthGate`) |
 
 ### Tech stack
-- Kotlin 2.3.20, Compose Multiplatform 1.10.3, Ktor 3.4.2
+- Kotlin 2.3.20, Compose Multiplatform 1.10.3, Ktor 3.5.1
 - Version catalog: `gradle/libs.versions.toml`
 - Code style: ktlint
 

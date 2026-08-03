@@ -197,4 +197,26 @@ class RegistrationClientTest {
             assertIs<RegistrationResult.Error>(result)
             assertEquals(PairingError.NETWORK, result.reason)
         }
+
+    // Guards the per-request retry opt-out: the shared defaultClient retries transient
+    // failures, but a pairing claim is one-shot — an auto-retried claim that already
+    // reached the server would burn the code.
+    @Test
+    fun claim_networkFailure_isNeverRetried() =
+        runTest {
+            var attempts = 0
+            val code = buildCode("https://pulse.example.com")
+            val engine =
+                MockEngine {
+                    attempts++
+                    throw RuntimeException("connection reset")
+                }
+            val client = RegistrationClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.claim(code)
+
+            assertIs<RegistrationResult.Error>(result)
+            assertEquals(PairingError.NETWORK, result.reason)
+            assertEquals(1, attempts)
+        }
 }

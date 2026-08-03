@@ -3,9 +3,12 @@ package com.pulseweaver.heartbeat.service
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
 import com.pulseweaver.heartbeat.platform.Log
 import io.ktor.client.HttpClient
+import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
+import io.ktor.client.engine.HttpClientEngine
+import io.ktor.client.plugins.HttpRequestRetry
+import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.timeout
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -30,7 +33,6 @@ class HeartbeatClient(
                     header("X-API-Key", config.apiKey)
                     contentType(ContentType.Application.Json)
                     setBody("{}")
-                    timeout { requestTimeoutMillis = 10_000 }
                 }
             when (response.status.value) {
                 200, 201 -> {
@@ -79,11 +81,37 @@ class HeartbeatClient(
     }
 
     companion object {
-        fun defaultClient(): HttpClient =
-            HttpClient {
-                install(ContentNegotiation) {
-                    json(Json { ignoreUnknownKeys = true })
-                }
+        fun defaultClient(): HttpClient = HttpClient { configureDefaults() }
+
+        /** Same production config on an injected engine, so tests exercise the real plugin stack. */
+        fun defaultClient(engine: HttpClientEngine): HttpClient = HttpClient(engine) { configureDefaults() }
+
+        // Reliability policy for unreliable networks (e.g. a phone on subway 3G): short
+        // attempts with fresh retries beat one long attempt, because a stuck attempt is
+        // usually held by something a new connection bypasses — a black-holed DNS lookup,
+        // a stale pooled socket after a Wi-Fi <-> cellular hop. The heartbeat is an
+        // idempotent refresh, so a duplicate send is harmless.
+        //
+        // Install order matters: HttpSend runs the first-installed plugin outermost, so
+        // retry must precede timeout for the request timeout to budget each attempt
+        // rather than the whole retry loop.
+        private fun HttpClientConfig<*>.configureDefaults() {
+            install(ContentNegotiation) {
+                json(Json { ignoreUnknownKeys = true })
             }
+            install(HttpRequestRetry) {
+                maxRetries = 2
+                // 5xx and network exceptions (including per-attempt timeouts) are worth a
+                // fresh attempt; 4xx (bad key, deleted device, rate limit) are definitive.
+                retryOnServerErrors()
+                retryOnException(retryOnTimeout = true)
+                exponentialDelay()
+            }
+            install(HttpTimeout) {
+                requestTimeoutMillis = 20_000
+                connectTimeoutMillis = 10_000
+                socketTimeoutMillis = 10_000
+            }
+        }
     }
 }

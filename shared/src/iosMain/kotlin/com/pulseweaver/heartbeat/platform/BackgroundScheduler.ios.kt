@@ -4,7 +4,7 @@ package com.pulseweaver.heartbeat.platform
 actual class BackgroundScheduler {
     actual fun schedulePeriodicHeartbeat(
         intervalSeconds: Int,
-        onTick: suspend () -> Unit,
+        onTick: suspend () -> Boolean,
     ) = Unit
 
     actual fun cancelHeartbeat() = Unit

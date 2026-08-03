@@ -2,6 +2,7 @@ package com.pulseweaver.heartbeat.service
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.plugins.retry
 import io.ktor.client.plugins.timeout
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -44,6 +45,10 @@ class RegistrationClient(
                     contentType(ContentType.Application.Json)
                     setBody("""{"code":"$code"}""")
                     timeout { requestTimeoutMillis = 15_000 }
+                    // No auto-retry: the pairing code is one-shot, so retrying a claim that
+                    // reached the server but timed out on the way back would burn the code.
+                    // The user can retry from the setup screen.
+                    retry { noRetry() }
                 }
             when (response.status.value) {
                 200, 201 -> RegistrationResult.Success(response.body())

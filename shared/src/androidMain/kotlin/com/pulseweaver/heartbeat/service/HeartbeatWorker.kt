@@ -16,8 +16,13 @@ class HeartbeatWorker(
         val config = ConfigStore().load()
         if (!config.enabled) return Result.success()
         val reason = inputData.getString(KEY_REASON) ?: DEFAULT_REASON
-        val result = HeartbeatClient().send(config, reason)
-        ResultStore().save(result, currentTimeForDisplay(), currentEpochMs())
+        val client = HeartbeatClient()
+        try {
+            val result = client.send(config, reason)
+            ResultStore().save(result, currentTimeForDisplay(), currentEpochMs())
+        } finally {
+            client.close()
+        }
         // Always return success — heartbeat failures are non-fatal background events
         return Result.success()
     }

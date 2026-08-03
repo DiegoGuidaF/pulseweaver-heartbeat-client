@@ -11,6 +11,8 @@ import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.Json
 import kotlin.test.Test
@@ -254,5 +256,126 @@ class HeartbeatClientTest {
             assertFalse(result.success)
             assertEquals("Connection failed", result.message)
             assertEquals("Heartbeat will resume when connected", result.hint)
+        }
+
+    // ── Reliability policy (through the real defaultClient config) ──
+
+    @Test
+    fun send_transientNetworkError_isRetriedAndSucceeds() =
+        runTest {
+            var attempts = 0
+            val engine =
+                MockEngine {
+                    attempts++
+                    if (attempts == 1) throw RuntimeException("connection reset")
+                    respond(sampleSuccessBody, HttpStatusCode.OK, jsonHeaders)
+                }
+            val client = HeartbeatClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.send(validConfig, "scheduled")
+
+            assertTrue(result.success)
+            assertEquals(2, attempts)
+        }
+
+    @Test
+    fun send_persistentNetworkError_failsAfterAllRetries() =
+        runTest {
+            var attempts = 0
+            val engine =
+                MockEngine {
+                    attempts++
+                    throw RuntimeException("No route to host")
+                }
+            val client = HeartbeatClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.send(validConfig, "scheduled")
+
+            assertFalse(result.success)
+            assertEquals("Connection failed", result.message)
+            assertEquals(3, attempts, "1 initial attempt + 2 retries")
+        }
+
+    @Test
+    fun send_serverError_isRetried() =
+        runTest {
+            var attempts = 0
+            val engine =
+                MockEngine {
+                    attempts++
+                    respond("Error", HttpStatusCode.InternalServerError, jsonHeaders)
+                }
+            val client = HeartbeatClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.send(validConfig, "scheduled")
+
+            assertFalse(result.success)
+            assertTrue(result.message.contains("500"))
+            assertEquals(3, attempts)
+        }
+
+    @Test
+    fun send_401_isNotRetried() =
+        runTest {
+            var attempts = 0
+            val engine =
+                MockEngine {
+                    attempts++
+                    respond("Unauthorized", HttpStatusCode.Unauthorized, jsonHeaders)
+                }
+            val client = HeartbeatClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.send(validConfig, "scheduled")
+
+            assertEquals("Invalid API key", result.message)
+            assertEquals(1, attempts, "definitive auth error must not be retried")
+        }
+
+    @Test
+    fun send_429_isNotRetried() =
+        runTest {
+            var attempts = 0
+            val engine =
+                MockEngine {
+                    attempts++
+                    respond("Too Many", HttpStatusCode.TooManyRequests, jsonHeaders)
+                }
+            val client = HeartbeatClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.send(validConfig, "scheduled")
+
+            assertEquals("Rate limited", result.message)
+            assertEquals(1, attempts, "retrying into rate-limiting must not happen")
+        }
+
+    // Guards the plugin install order: retry must wrap timeout so the request timeout
+    // budgets each attempt. A whole-call timeout would cancel the retry loop itself,
+    // leaving a single attempt — exactly the hang-then-give-up this config exists to fix.
+    @Test
+    fun send_hungRequest_timesOutPerAttemptAndRetries() =
+        runTest {
+            var attempts = 0
+            val engine =
+                MockEngine.create {
+                    // The timeout watchdog and the simulated hang live on the engine's call
+                    // context; running the engine on the test scheduler puts both on virtual
+                    // time, so the three 20s attempts resolve instantly and deterministically.
+                    dispatcher = StandardTestDispatcher(testScheduler)
+                    addHandler {
+                        attempts++
+                        delay(60_000)
+                        respond(sampleSuccessBody, HttpStatusCode.OK, jsonHeaders)
+                    }
+                }
+            val client = HeartbeatClient(HeartbeatClient.defaultClient(engine))
+
+            val result = client.send(validConfig, "scheduled")
+            // The timed-out attempts leave their handler coroutines parked in delay();
+            // closing the client cancels them so runTest sees no leaked coroutines.
+            client.close()
+
+            assertFalse(result.success)
+            assertEquals("Connection failed", result.message)
+            assertEquals(3, attempts, "each attempt gets its own timeout budget, then retries")
         }
 }

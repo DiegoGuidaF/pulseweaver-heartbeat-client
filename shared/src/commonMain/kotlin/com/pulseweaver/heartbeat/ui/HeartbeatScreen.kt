@@ -114,24 +114,31 @@ fun HeartbeatScreen(
     val resultStore = remember { ResultStore() }
     val networkMonitor = remember { NetworkMonitor() }
 
-    suspend fun sendHeartbeat(trigger: String) {
-        if (isSending) return
+    // Returns whether the beat succeeded, so schedulers can retry a failure early.
+    suspend fun sendHeartbeat(trigger: String): Boolean {
+        if (isSending) return false
         isSending = true
-        Log.i("Heartbeat", "send: trigger=$trigger")
-        val result = client.send(config, trigger)
-        val epochMs = currentEpochMs()
-        lastResult = result
-        lastResultTime = currentTimeForDisplay()
-        lastResultMark = TimeSource.Monotonic.markNow()
-        lastResultEpochMs = epochMs
-        resultStore.save(result, lastResultTime, epochMs)
-        onLastResultChange(result)
-        if (result.success) {
-            Log.i("Heartbeat", "ok: ${result.message} (ip=${result.ip})")
-        } else {
-            Log.w("Heartbeat", "error: ${result.message}")
+        // The reset lives in a finally so a cancelled send can't leave the screen stuck
+        // on "Sending…" with every later trigger swallowed by the isSending guard.
+        try {
+            Log.i("Heartbeat", "send: trigger=$trigger")
+            val result = client.send(config, trigger)
+            val epochMs = currentEpochMs()
+            lastResult = result
+            lastResultTime = currentTimeForDisplay()
+            lastResultMark = TimeSource.Monotonic.markNow()
+            lastResultEpochMs = epochMs
+            resultStore.save(result, lastResultTime, epochMs)
+            onLastResultChange(result)
+            if (result.success) {
+                Log.i("Heartbeat", "ok: ${result.message} (ip=${result.ip})")
+            } else {
+                Log.w("Heartbeat", "error: ${result.message}")
+            }
+            return result.success
+        } finally {
+            isSending = false
         }
-        isSending = false
     }
 
     // Load config and last heartbeat result on startup

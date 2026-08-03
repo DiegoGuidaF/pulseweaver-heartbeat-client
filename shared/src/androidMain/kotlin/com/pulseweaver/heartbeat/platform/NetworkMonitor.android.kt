@@ -22,6 +22,10 @@ actual class NetworkMonitor actual constructor() {
                 // network — skip it so we only react to actual connectivity changes.
                 private var initialCallbackFired = false
 
+                // Only network arrival triggers a beat: the default-network callback fires
+                // onAvailable on Wi-Fi <-> cellular hops, which is the IP-change case the
+                // server needs to hear about. Reacting to onLost would race a doomed request
+                // into a network that is already gone.
                 override fun onAvailable(network: Network) {
                     if (!initialCallbackFired) {
                         initialCallbackFired = true
@@ -29,8 +33,6 @@ actual class NetworkMonitor actual constructor() {
                     }
                     onNetworkChange()
                 }
-
-                override fun onLost(network: Network) = onNetworkChange()
             }
         callback = cb
         cm.registerDefaultNetworkCallback(cb)

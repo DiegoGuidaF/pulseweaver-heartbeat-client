@@ -25,18 +25,21 @@ class HeartbeatAlarmReceiver : BroadcastReceiver() {
             try {
                 val config = ConfigStore().load()
                 if (!config.enabled) return@launch
-                var success = false
+                // Arm the retry link BEFORE sending: goAsync() only protects the process for
+                // ~10 s, so a send that hangs — or a process kill mid-send — must already have
+                // the next alarm armed or the chain dies until the next app open / reboot.
+                // Over-polling is harmless (the server only needs one refresh per interval), and
+                // allow-while-idle alarms are OS-clamped to ~9 min apart in deep Doze anyway.
+                scheduleHeartbeatAlarm(context, RETRY_DELAY_SECONDS)
+                val client = HeartbeatClient()
                 try {
-                    val result = HeartbeatClient().send(config, "scheduled")
+                    val result = client.send(config, "scheduled")
                     ResultStore().save(result, currentTimeForDisplay(), currentEpochMs())
-                    success = result.success
+                    // A success stretches the pre-armed retry back to full cadence; a failure
+                    // keeps the short retry so a transient blip recovers quickly.
+                    if (result.success) scheduleHeartbeatAlarm(context, config.intervalSeconds)
                 } finally {
-                    // Always re-arm so the chain can't die — on a failed (or thrown) send, retry
-                    // soon instead of waiting a full interval; a later success returns to cadence.
-                    // Over-polling is harmless (the server only needs one refresh per interval), and
-                    // allow-while-idle alarms are OS-clamped to ~9 min apart in deep Doze anyway.
-                    val nextDelaySeconds = if (success) config.intervalSeconds else RETRY_DELAY_SECONDS
-                    scheduleHeartbeatAlarm(context, nextDelaySeconds)
+                    client.close()
                 }
             } finally {
                 pendingResult.finish()

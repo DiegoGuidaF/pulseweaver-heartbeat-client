@@ -147,7 +147,7 @@ actual class BackgroundScheduler(
     // desktop coroutine scheduler.
     actual fun schedulePeriodicHeartbeat(
         intervalSeconds: Int,
-        onTick: suspend () -> Unit,
+        onTick: suspend () -> Boolean,
     ) {
         scheduleHeartbeatAlarm(context, intervalSeconds)
         registerNetworkChangeCallback(context)

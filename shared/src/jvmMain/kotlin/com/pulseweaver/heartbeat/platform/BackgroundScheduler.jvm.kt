@@ -8,6 +8,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
+// Retry delay after a failed beat — short so a transient network blip recovers well
+// before the next full interval would.
+private const val RETRY_DELAY_SECONDS = 60
+
 /**
  * Desktop scheduler. Runs on its own background scope rather than the Compose UI
  * scope: `delay` on the AWT event thread is throttled by macOS App Nap when the
@@ -24,7 +28,7 @@ actual class BackgroundScheduler(
 
     actual fun schedulePeriodicHeartbeat(
         intervalSeconds: Int,
-        onTick: suspend () -> Unit,
+        onTick: suspend () -> Boolean,
     ) {
         job?.cancel()
         val effectiveSeconds = debugIntervalOverrideSeconds() ?: intervalSeconds
@@ -34,11 +38,17 @@ actual class BackgroundScheduler(
         Log.i("Scheduler", "scheduled: every ${effectiveSeconds}s")
         job =
             scope.launch {
+                var delaySeconds = effectiveSeconds
                 while (isActive) {
-                    delay(effectiveSeconds * 1_000L)
+                    delay(delaySeconds * 1_000L)
                     if (isActive) {
                         Log.d("Scheduler", "tick")
-                        onTick()
+                        val success = onTick()
+                        // Same cadence contract as the Android alarm chain: a failed beat
+                        // retries soon instead of waiting out a full interval (up to a day),
+                        // a success returns to cadence. Clamped so a short debug interval
+                        // stays the faster of the two.
+                        delaySeconds = if (success) effectiveSeconds else minOf(effectiveSeconds, RETRY_DELAY_SECONDS)
                     }
                 }
             }
