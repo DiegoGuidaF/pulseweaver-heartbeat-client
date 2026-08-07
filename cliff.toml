@@ -26,7 +26,7 @@ trim = true
 
 [git]
 conventional_commits = true
-filter_unconventional = true
+filter_unconventional = false
 split_commits = false
 commit_preprocessors = [
   { pattern = '\(#([0-9]+)\)', replace = "([#${1}](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/pull/${1}))" },
@@ -43,6 +43,9 @@ commit_parsers = [
   { message = "^ci", group = "Miscellaneous" },
   { message = "^chore", group = "Miscellaneous" },
   { message = "^revert", group = "Miscellaneous" },
+  # Catch-all: anything the parsers above miss still lands in the changelog
+  # rather than being silently dropped.
+  { message = ".*", group = "Uncategorized" },
 ]
 protect_breaking_commits = false
 filter_commits = false
