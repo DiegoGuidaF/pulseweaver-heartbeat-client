@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.0] - 2026-08-07
+
+### Bug Fixes
+
+- Keep desktop heartbeat running when backgrounded; add cross-platform logging ([`c9378ef`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/c9378efe2d2cf722c121789b1a189ad196299c2f))
+- Regenerate desktop icons full-bleed from the cropped mark ([`7541b0f`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/7541b0fab4ee45148c951f0965d1aef14ae816cd))
+- Fix heartbeat reliability when on a bad unstable connection ([`dbc426f`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/dbc426fb6980c19376b25feb4a6f96fd2ec34ca1))
+- Do not reload app on orientation change (it was triggering the app lock) ([`b3bd643`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/b3bd64396bea67e7658373683dc1cbac27227425))
+- Route the battery exemption prompt to App info instead of the optimization list ([`f6feb84`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/f6feb8455260abcb5041cfc6ec84dac81f716120))
+
+### Features
+
+- Add desktop launchers, app icons, and status-tinted tray icon ([`495a683`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/495a6831dea3ee8132005944d11b5a5a0ff82b11))
+- Tray double-click opens window; auto-start at login with toggle ([`146670f`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/146670fd445e58cd4bd446938380f290c6f5e5fc))
+- Autostart app on desktop ([`f8e56f2`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/f8e56f2bbc8636c80b12cbe2b793e37be55fefa9))
+- Show version, channel and commit at the bottom of the main screen ([`9db8dcb`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/9db8dcbd1c35e5608757f657aa1cf45275a5556e))
+- Notify when a newer release exists, and install it in place on Android ([`59786b7`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/59786b76e1de7ce8f24a48a35a307184adce53d2))
+
+### Miscellaneous
+
+- Add linux-arm64 deb and arch-qualify desktop asset names ([`7655698`](https://github.com/DiegoGuidaF/PulseWeaver-Heartbeat/commit/7655698c5cd96dcfd02a83a5f859e43bc6b0b102))
+
 ## [1.3.0] - 2026-06-30
 
 ### Documentation
