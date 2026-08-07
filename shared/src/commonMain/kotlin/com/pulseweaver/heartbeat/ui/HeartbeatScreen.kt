@@ -114,6 +114,7 @@ fun HeartbeatScreen(
     var reliabilityDismissed by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
+    val updateNotice = rememberUpdateNotice()
     val client = remember { HeartbeatClient() }
     val configStore = remember { ConfigStore() }
     val resultStore = remember { ResultStore() }
@@ -301,6 +302,11 @@ fun HeartbeatScreen(
                 isConfigValid = isConfigValid,
                 onTap = { coroutineScope.launch { sendHeartbeat("manual") } },
             )
+
+            // ── Update available ───────────────────────────────────────────
+            // Directly under the hero so it lands in the first viewport and is noticed without
+            // being looked for. Inline, not modal: a stale version doesn't stop heartbeats.
+            UpdateCard(updateNotice)
 
             // ── Background reliability (Android, until exempt) ─────────────
             // A modal rather than an inline card: granting the exemption is what keeps the device
@@ -626,13 +632,22 @@ fun HeartbeatScreen(
             // ── Build identity ─────────────────────────────────────────────
             // Below the fold on a phone viewport, which keeps it out of the doc screenshots
             // that DocScreenshotsTest captures — otherwise every commit would rewrite the PNGs.
-            Text(
-                BuildInfo.display,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().testTag(TestTags.BUILD_INFO),
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    BuildInfo.display,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().testTag(TestTags.BUILD_INFO),
+                )
+                // Paired with the build identity on purpose: the line that answers "which build
+                // am I running?" is where someone who *is* looking goes. Renders on release
+                // builds only, so the doc screenshots (a `local` build) never see it.
+                CheckForUpdatesLink(updateNotice)
+            }
         }
     }
 }

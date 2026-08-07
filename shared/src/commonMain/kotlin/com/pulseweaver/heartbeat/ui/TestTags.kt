@@ -28,6 +28,13 @@ object TestTags {
     const val THEME_CHIP_DARK = "theme_chip_dark"
     const val BUILD_INFO = "build_info"
 
+    // Update notice
+    const val UPDATE_CARD = "update_card"
+    const val UPDATE_ACTION = "update_action"
+    const val UPDATE_SKIP = "update_skip"
+    const val UPDATE_CHECK_LINK = "update_check_link"
+    const val UPDATE_STATUS = "update_status"
+
     // SetupScreen
     const val SETUP_SCREEN = "setup_screen"
     const val REGISTRATION_CODE_FIELD = "registration_code_field"
