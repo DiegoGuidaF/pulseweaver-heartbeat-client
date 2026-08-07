@@ -118,17 +118,32 @@ The **biometric lock gates the app UI only** (viewing and changing settings) —
 
 The app is pre-1.0: the platforms marked ✅ are functional and tested, but expect rough edges and breaking changes between releases.
 
+"Ready" describes the platform, not every machine on it: prebuilt packages cover
+Apple Silicon Macs, x86-64 and arm64 Linux, and x64 Windows. Intel Macs are
+supported by the code but ship no installer — see [Installing](#installing).
+
 ## Installing
 
 Download the latest release for your platform
 from [GitHub Releases](https://github.com/DiegoGuidaF/pulseweaver-heartbeat-client/releases):
 
-| Platform | Artifact                   |
-|----------|----------------------------|
-| Android  | `.apk`                     |
-| Linux    | `.deb` / `.rpm` / AppImage |
-| Windows  | `.msi`                     |
-| macOS    | `.dmg`                     |
+| Platform | Architecture           | Artifact                            |
+|----------|------------------------|-------------------------------------|
+| Android  | all (single APK)       | `-android.apk`                      |
+| Linux    | x86-64                 | `-linux-amd64.deb`                  |
+| Linux    | arm64                  | `-linux-arm64.deb`                  |
+| Windows  | x64 (arm64 emulates)   | `-windows-x64.msi`                  |
+| macOS    | Apple Silicon          | `-macos-arm64.dmg`                  |
+
+**Pick the right architecture.** Each desktop installer bundles its own Java
+runtime, built for one architecture only — an installer for the wrong one will
+install and then fail to launch. On Linux, `dpkg --print-architecture` tells you
+which `.deb` you need. On Windows, the x64 MSI is the only one, and it runs on
+arm64 machines under emulation.
+
+**Intel Macs** have no prebuilt package: the macOS DMG is Apple Silicon only.
+Intel users can [build from source](#building-from-source) on the Intel machine
+itself, which produces a working x86-64 app.
 
 On Android you'll need to allow installing the `.apk` from your browser or files app ("install unknown apps").
 

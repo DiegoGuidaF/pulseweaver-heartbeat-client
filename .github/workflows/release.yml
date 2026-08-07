@@ -112,8 +112,13 @@ jobs:
       release-tag: ${{ github.ref_name }}
     secrets: inherit
 
-  build-linux:
-    name: Linux packages
+  # Every desktop package is built for the runner's own architecture and no
+  # other: `compose.desktop.currentOs` resolves the Skiko native runtime per
+  # host OS *and* arch, and jpackage jlinks its bundled JRE from the JDK it is
+  # running on, with no way to cross-compile. One runner therefore means one
+  # architecture, and every asset name has to say which one it is.
+  build-linux-amd64:
+    name: Linux .deb (amd64)
     needs: [test, create-release]
     permissions:
       contents: write
@@ -129,8 +134,29 @@ jobs:
       release-tag: ${{ github.ref_name }}
     secrets: inherit
 
+  build-linux-arm64:
+    name: Linux .deb (arm64)
+    needs: [test, create-release]
+    permissions:
+      contents: write
+    uses: ./.github/workflows/_build.yml
+    with:
+      runs-on: ubuntu-24.04-arm
+      gradle-task: ':shared:packageDeb'
+      artifact-dir: shared/build/compose/binaries/main/deb
+      artifact-pattern: '*.deb'
+      output-name: PulseWeaver-Companion-${{ github.ref_name }}-linux-arm64.deb
+      app-version: ${{ github.ref_name }}
+      upload-to-release: true
+      release-tag: ${{ github.ref_name }}
+    secrets: inherit
+
+  # Apple Silicon only. Intel Macs get no package: the last x86_64 macOS image
+  # GitHub will offer (macos-15-intel) is retired in 2027 along with the
+  # architecture itself, so an Intel job would be built to be deleted within the
+  # year. Intel users build from source — see docs/app.md.
   build-macos:
-    name: macOS DMG
+    name: macOS DMG (arm64)
     needs: [test, create-release]
     permissions:
       contents: write
@@ -140,14 +166,16 @@ jobs:
       gradle-task: ':shared:packageDmg'
       artifact-dir: shared/build/compose/binaries/main/dmg
       artifact-pattern: '*.dmg'
-      output-name: PulseWeaver-Companion-${{ github.ref_name }}-macos.dmg
+      output-name: PulseWeaver-Companion-${{ github.ref_name }}-macos-arm64.dmg
       app-version: ${{ github.ref_name }}
       upload-to-release: true
       release-tag: ${{ github.ref_name }}
     secrets: inherit
 
+  # x64 only, and that is enough: Windows on arm64 runs x64 binaries under
+  # emulation, so a native arm64 MSI would buy performance, not reach.
   build-windows:
-    name: Windows MSI
+    name: Windows MSI (x64)
     needs: [test, create-release]
     permissions:
       contents: write
@@ -157,7 +185,7 @@ jobs:
       gradle-task: ':shared:packageMsi'
       artifact-dir: shared/build/compose/binaries/main/msi
       artifact-pattern: '*.msi'
-      output-name: PulseWeaver-Companion-${{ github.ref_name }}-windows.msi
+      output-name: PulseWeaver-Companion-${{ github.ref_name }}-windows-x64.msi
       app-version: ${{ github.ref_name }}
       upload-to-release: true
       release-tag: ${{ github.ref_name }}

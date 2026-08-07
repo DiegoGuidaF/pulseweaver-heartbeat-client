@@ -55,21 +55,29 @@ jobs:
             # something no device will install.
             pattern: '*-release.apk'
             suffix: android.apk
+          # One runner builds one architecture — see the note in release.yml.
+          # This matrix mirrors the release matrix so a dev build covers every
+          # package a release ships, and nothing more.
           - runs-on: ubuntu-latest
             task: ':shared:packageDeb'
             dir: shared/build/compose/binaries/main/deb
             pattern: '*.deb'
             suffix: linux-amd64.deb
+          - runs-on: ubuntu-24.04-arm
+            task: ':shared:packageDeb'
+            dir: shared/build/compose/binaries/main/deb
+            pattern: '*.deb'
+            suffix: linux-arm64.deb
           - runs-on: macos-latest
             task: ':shared:packageDmg'
             dir: shared/build/compose/binaries/main/dmg
             pattern: '*.dmg'
-            suffix: macos.dmg
+            suffix: macos-arm64.dmg
           - runs-on: windows-latest
             task: ':shared:packageMsi'
             dir: shared/build/compose/binaries/main/msi
             pattern: '*.msi'
-            suffix: windows.msi
+            suffix: windows-x64.msi
     uses: ./.github/workflows/_build.yml
     with:
       runs-on: ${{ matrix.runs-on }}
