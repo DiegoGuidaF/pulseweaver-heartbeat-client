@@ -58,7 +58,7 @@ Kotlin Multiplatform with Compose Multiplatform UI. Two Gradle modules:
 | `ui/` | Compose screens (`HeartbeatScreen`, `AuthGate`) |
 
 ### Tech stack
-- Kotlin 2.3.20, Compose Multiplatform 1.10.3, Ktor 3.5.1
+- Kotlin 2.4.10, Compose Multiplatform 1.11.1, Ktor 3.5.2
 - Version catalog: `gradle/libs.versions.toml`
 - Code style: ktlint
 
