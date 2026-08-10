@@ -25,6 +25,6 @@ jobs:
           distribution: zulu
           java-version: 21
 
-      - uses: gradle/actions/dependency-submission@v6.2.0
+      - uses: gradle/actions/dependency-submission@v6.3.0
         env:
           DEPENDENCY_GRAPH_INCLUDE_CONFIGURATIONS: '.*[Rr]untimeClasspath'
