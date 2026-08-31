@@ -10,6 +10,7 @@ import io.ktor.client.plugins.HttpRequestRetry
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.header
+import io.ktor.client.request.parameter
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
@@ -31,6 +32,7 @@ class HeartbeatClient(
             val response =
                 client.post(url) {
                     header("X-API-Key", config.apiKey)
+                    parameter("trigger_type", wireTrigger(trigger))
                     contentType(ContentType.Application.Json)
                     setBody("{}")
                 }
@@ -75,6 +77,24 @@ class HeartbeatClient(
             )
         }
     }
+
+    /**
+     * Maps the app's local trigger vocabulary onto the server's
+     * `AddressEventTrigger` values. The tray "send now" item collapses onto
+     * `user` because the axis measures whether a human caused the beat, not
+     * which control they used; the local vocabulary keeps the distinction for
+     * the log line and the result message.
+     *
+     * The server treats this annotation as advisory and degrades anything it
+     * does not recognise, so an unmapped string falls back to `schedule` here
+     * rather than failing the beat.
+     */
+    private fun wireTrigger(trigger: String): String =
+        when (trigger) {
+            "manual", "tray" -> "user"
+            "network_change" -> "network_change"
+            else -> "schedule"
+        }
 
     fun close() {
         client.close()

@@ -9,6 +9,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Url
 import io.ktor.http.headersOf
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.delay
@@ -104,7 +105,12 @@ class HeartbeatClientTest {
 
             client.send(validConfig, "scheduled")
 
-            assertEquals("https://pulse.example.com/api/v1/heartbeat", capturedUrl)
+            assertEquals("https://pulse.example.com/api/v1/heartbeat", capturedUrl.substringBefore('?'))
+            assertEquals(
+                setOf("trigger_type"),
+                Url(capturedUrl).parameters.names(),
+                "the heartbeat carries no query string beyond its trigger annotation",
+            )
         }
 
     @Test
@@ -120,7 +126,7 @@ class HeartbeatClientTest {
 
             client.send(config, "scheduled")
 
-            assertEquals("https://pulse.example.com/api/v1/heartbeat", capturedUrl)
+            assertEquals("https://pulse.example.com/api/v1/heartbeat", capturedUrl.substringBefore('?'))
         }
 
     @Test
@@ -151,6 +157,54 @@ class HeartbeatClientTest {
             client.send(validConfig, "scheduled")
 
             assertEquals(HttpMethod.Post, capturedMethod)
+        }
+
+    // ── Trigger attribution ─────────────────────────────────────────
+
+    private suspend fun capturedWireTrigger(trigger: String): String? {
+        var capturedUrl = ""
+        val client =
+            mockClient { url, _, _ ->
+                capturedUrl = url
+                Triple(sampleSuccessBody, HttpStatusCode.OK, jsonHeaders)
+            }
+
+        client.send(validConfig, trigger)
+
+        return Url(capturedUrl).parameters["trigger_type"]
+    }
+
+    @Test
+    fun send_manualTrigger_sendsUser() =
+        runTest {
+            assertEquals("user", capturedWireTrigger("manual"))
+        }
+
+    @Test
+    fun send_trayTrigger_sendsUser() =
+        runTest {
+            assertEquals("user", capturedWireTrigger("tray"))
+        }
+
+    @Test
+    fun send_scheduledTrigger_sendsSchedule() =
+        runTest {
+            assertEquals("schedule", capturedWireTrigger("scheduled"))
+        }
+
+    @Test
+    fun send_networkChangeTrigger_sendsNetworkChange() =
+        runTest {
+            assertEquals("network_change", capturedWireTrigger("network_change"))
+        }
+
+    // An annotation must never cost a device its authorization, so an unmapped
+    // local trigger degrades to the default instead of reaching the server as a
+    // value it would have to reject.
+    @Test
+    fun send_unmappedTrigger_fallsBackToSchedule() =
+        runTest {
+            assertEquals("schedule", capturedWireTrigger("something-new"))
         }
 
     // ── Successful responses ────────────────────────────────────────
