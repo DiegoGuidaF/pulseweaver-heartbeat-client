@@ -2,6 +2,13 @@ package com.pulseweaver.heartbeat.service
 
 import com.pulseweaver.heartbeat.config.ThemeMode
 
+/** Which battery-reliability surface the screen should render, if any. */
+enum class ReliabilityPrompt {
+    NONE,
+    DIALOG,
+    CARD,
+}
+
 /**
  * Pure helper functions extracted from UI composables so they can be
  * unit-tested without a Compose runtime.
@@ -48,6 +55,33 @@ object HeartbeatUtils {
     ): Boolean =
         (serverUrl.startsWith("http://") || serverUrl.startsWith("https://")) &&
             apiKey.isNotEmpty()
+
+    /**
+     * Picks the battery-reliability surface for the current state.
+     *
+     * The modal gets exactly one appearance per install: it is the only surface prominent
+     * enough to make someone act, but a device that cannot report the exemption — some OEM
+     * builds never flip `isIgnoringBatteryOptimizations`, however the user answers — would
+     * otherwise show it on every single launch. Afterwards the inline card carries the same
+     * request, staying on screen (and in any screenshot a user sends) until the exemption
+     * actually lands, without blocking the app.
+     *
+     * [isLoaded] is load-bearing rather than belt-and-braces: the caller assigns the loaded
+     * config before it reads [promptSeen], so between those two writes a recomposition sees a
+     * real `enabled` beside a still-default `promptSeen`. Without the gate the modal reopens
+     * on an install that already retired it.
+     */
+    fun reliabilityPrompt(
+        isLoaded: Boolean,
+        heartbeatEnabled: Boolean,
+        isExempt: Boolean,
+        promptSeen: Boolean,
+    ): ReliabilityPrompt =
+        when {
+            !isLoaded || !heartbeatEnabled || isExempt -> ReliabilityPrompt.NONE
+            promptSeen -> ReliabilityPrompt.CARD
+            else -> ReliabilityPrompt.DIALOG
+        }
 
     /**
      * Determines whether a dark color scheme should be used based on the

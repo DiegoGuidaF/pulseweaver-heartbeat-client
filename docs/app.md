@@ -28,14 +28,24 @@ needs no further attention.
 >
 > Full reasoning: [Recommended settings for roaming devices](https://github.com/DiegoGuidaF/PulseWeaver/blob/main/docs/Connecting-Devices.md#recommended-settings-for-roaming-devices).
 
-> **Android: turn off battery optimization**
+> **Android: allow unrestricted battery use**
 >
-> Android's Doze / App Standby pauses background apps, especially on a phone that has been asleep —
-> locked and unused — for a while, and can defer the heartbeat by hours, letting the device's access
-> expire. On first run the app shows a reliability prompt — tap **Open settings**, find PulseWeaver
-> Companion in the battery-optimization list, and turn optimization **off**. This is required for the
-> background schedule to run on time. Admins: this is the first thing to check when a user reports
-> their access dropping.
+> Android pauses background apps to save power, especially on a phone that has been asleep —
+> locked and unused — for a while, and can delay the heartbeat, letting the device's access
+> expire. On first run the app shows a prompt: tap **Open settings**, then set
+> **Battery → Unrestricted**. On Android 15 and later the path is **App battery usage → Allow
+> background usage → Unrestricted**; if you land on a battery-usage graph, the setting is one
+> level further in. Admins: this is the first thing to check when a user reports their access
+> dropping.
+>
+> After the first prompt, the reminder stays as a card on the main screen until the setting is
+> granted — so a screenshot of the app is enough to tell whether it is still outstanding.
+>
+> On a few phones the app cannot detect the setting even once you have granted it, and the card
+> stays put. On such a device the setting really is granted and nothing is wrong — only the card
+> is misreporting. To confirm, with USB debugging on:
+> `adb shell dumpsys deviceidle whitelist | grep -i pulseweaver` — if the package is listed, the
+> setting is granted and the card is a false alarm.
 
 ## Sending a heartbeat manually
 

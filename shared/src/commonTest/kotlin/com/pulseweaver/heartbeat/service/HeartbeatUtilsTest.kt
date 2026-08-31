@@ -67,6 +67,45 @@ class HeartbeatUtilsTest {
         assertFalse(HeartbeatUtils.isConfigValid("example.com", "key"))
     }
 
+    // ── reliabilityPrompt ───────────────────────────────────────────
+
+    private fun prompt(
+        isLoaded: Boolean = true,
+        heartbeatEnabled: Boolean = true,
+        isExempt: Boolean = false,
+        promptSeen: Boolean = false,
+    ) = HeartbeatUtils.reliabilityPrompt(isLoaded, heartbeatEnabled, isExempt, promptSeen)
+
+    @Test
+    fun reliabilityPrompt_firstRunUnexempt_showsDialog() {
+        assertEquals(ReliabilityPrompt.DIALOG, prompt())
+    }
+
+    @Test
+    fun reliabilityPrompt_alreadyPrompted_downgradesToCard() {
+        assertEquals(ReliabilityPrompt.CARD, prompt(promptSeen = true))
+    }
+
+    @Test
+    fun reliabilityPrompt_exempt_showsNothing() {
+        assertEquals(ReliabilityPrompt.NONE, prompt(isExempt = true))
+        assertEquals(ReliabilityPrompt.NONE, prompt(isExempt = true, promptSeen = true))
+    }
+
+    @Test
+    fun reliabilityPrompt_heartbeatDisabled_showsNothing() {
+        assertEquals(ReliabilityPrompt.NONE, prompt(heartbeatEnabled = false))
+    }
+
+    // The gate earns its place mid-load, not before it. The startup effect assigns the loaded
+    // config first and only then suspends again to read promptSeen, so a recomposition in that
+    // gap sees exactly the state of reliabilityPrompt_firstRunUnexempt above — and without
+    // isLoaded would re-open the modal on an install that has already retired it.
+    @Test
+    fun reliabilityPrompt_whileStartupLoadInFlight_showsNothing() {
+        assertEquals(ReliabilityPrompt.NONE, prompt(isLoaded = false))
+    }
+
     // ── shouldUseDarkTheme ──────────────────────────────────────────
 
     @Test

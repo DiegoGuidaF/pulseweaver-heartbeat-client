@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.dp
 import com.pulseweaver.heartbeat.BuildInfo
 import com.pulseweaver.heartbeat.config.ConfigStore
 import com.pulseweaver.heartbeat.config.HeartbeatConfig
+import com.pulseweaver.heartbeat.config.ReliabilityState
+import com.pulseweaver.heartbeat.config.ReliabilityStore
 import com.pulseweaver.heartbeat.config.ResultStore
 import com.pulseweaver.heartbeat.config.ThemeMode
 import com.pulseweaver.heartbeat.platform.AutoStart
@@ -66,6 +68,7 @@ import com.pulseweaver.heartbeat.platform.platformHasBackgroundLimit
 import com.pulseweaver.heartbeat.service.HeartbeatClient
 import com.pulseweaver.heartbeat.service.HeartbeatResult
 import com.pulseweaver.heartbeat.service.HeartbeatUtils
+import com.pulseweaver.heartbeat.service.ReliabilityPrompt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -109,15 +112,16 @@ fun HeartbeatScreen(
     // Android-only: true once the app is exempt from battery optimization. Starts true on
     // desktop/iOS so the reliability surface never appears there.
     var batteryExempt by remember { mutableStateOf(BatteryOptimization.isExempt()) }
-    // Dismissing the exemption modal hides it for this session; it reappears next launch while
-    // still unexempt, so the prompt stays prominent without nagging mid-session.
-    var reliabilityDismissed by remember { mutableStateOf(false) }
+    // Persisted, so the exemption modal opens once per install and the inline card carries the
+    // request from then on. Loaded from disk alongside the config, before isLoaded flips.
+    var reliabilityPromptSeen by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     val updateNotice = rememberUpdateNotice()
     val client = remember { HeartbeatClient() }
     val configStore = remember { ConfigStore() }
     val resultStore = remember { ResultStore() }
+    val reliabilityStore = remember { ReliabilityStore() }
     val networkMonitor = remember { NetworkMonitor() }
 
     // Returns whether the beat succeeded, so schedulers can retry a failure early.
@@ -147,6 +151,13 @@ fun HeartbeatScreen(
         }
     }
 
+    // Retires the modal after its single appearance, however it was closed. The in-memory flag
+    // flips first so the inline card takes over in the same frame, without waiting on the write.
+    fun retireReliabilityDialog() {
+        reliabilityPromptSeen = true
+        coroutineScope.launch { reliabilityStore.save(ReliabilityState(promptSeen = true)) }
+    }
+
     // Load config and last heartbeat result on startup
     LaunchedEffect(Unit) {
         val loaded = configStore.load()
@@ -161,6 +172,7 @@ fun HeartbeatScreen(
         if (HeartbeatUtils.isConfigValid(loaded.serverUrl, loaded.apiKey)) {
             connectionExpanded = false
         }
+        reliabilityPromptSeen = reliabilityStore.load().promptSeen
         isLoaded = true
         if (config.enabled) {
             networkMonitor.startMonitoring { coroutineScope.launch { sendHeartbeat("network_change") } }
@@ -232,8 +244,8 @@ fun HeartbeatScreen(
         }
     }
 
-    // Re-check the battery-optimization exemption until granted, so the reliability modal disappears
-    // shortly after the user returns from the system dialog. Inert on desktop/iOS (starts exempt).
+    // Re-check the battery-optimization exemption until granted, so the reliability surface clears
+    // shortly after the user returns from system settings. Inert on desktop/iOS (starts exempt).
     LaunchedEffect(Unit) {
         while (!batteryExempt) {
             delay(1_000)
@@ -309,34 +321,29 @@ fun HeartbeatScreen(
             UpdateCard(updateNotice)
 
             // ── Background reliability (Android, until exempt) ─────────────
-            // A modal rather than an inline card: granting the exemption is what keeps the device
-            // authorized while the phone sleeps, so the request must be prominent, not optional.
-            if (isLoaded && config.enabled && !batteryExempt && !reliabilityDismissed) {
-                AlertDialog(
-                    modifier = Modifier.testTag(TestTags.RELIABILITY_CARD),
-                    onDismissRequest = { reliabilityDismissed = true },
-                    title = { Text("Keep this device authorized") },
-                    text = {
-                        Text(
-                            "Android pauses background apps to save battery, which can delay your " +
-                                "heartbeat by hours and let this device's access expire. Open app " +
-                                "settings, tap Battery, and choose Unrestricted so PulseWeaver can " +
-                                "keep this device authorized while your phone sleeps.",
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            modifier = Modifier.testTag(TestTags.RELIABILITY_ALLOW_BUTTON),
-                            onClick = {
-                                BatteryOptimization.requestExemption()
-                                reliabilityDismissed = true
-                            },
-                        ) { Text("Open settings") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { reliabilityDismissed = true }) { Text("Not now") }
-                    },
+            // Modal once per install, then a standing inline card. The card sits here, beside the
+            // update notice, so it lands in the first viewport of a screenshot.
+            val prompt =
+                HeartbeatUtils.reliabilityPrompt(
+                    isLoaded = isLoaded,
+                    heartbeatEnabled = config.enabled,
+                    isExempt = batteryExempt,
+                    promptSeen = reliabilityPromptSeen,
                 )
+            when (prompt) {
+                ReliabilityPrompt.DIALOG ->
+                    ReliabilityDialog(
+                        onOpenSettings = {
+                            BatteryOptimization.requestExemption()
+                            retireReliabilityDialog()
+                        },
+                        onDismiss = { retireReliabilityDialog() },
+                    )
+
+                ReliabilityPrompt.CARD ->
+                    ReliabilityCard(onOpenSettings = { BatteryOptimization.requestExemption() })
+
+                ReliabilityPrompt.NONE -> Unit
             }
 
             // ── Connection card — hidden until config is loaded to avoid flash ──
