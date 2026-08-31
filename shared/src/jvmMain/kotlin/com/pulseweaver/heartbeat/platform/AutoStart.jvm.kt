@@ -31,8 +31,9 @@ private val windowsRunKeyPath = WINDOWS_RUN_KEY.replaceFirst("HKCU", "HKEY_CURRE
 // Marks that the start-at-login question has been answered — by the user, or by
 // the default applied to an install that never saw setup. Versioned: bumping the
 // suffix re-asks installs an earlier build already marked, which is how a machine
-// left unregistered by a broken registration gets another chance.
-private const val DECIDED_KEY = "autoStartDecided.v2"
+// left unregistered by a broken registration gets another chance. v3 re-asks the
+// macOS installs whose agent was written to disk but never handed to launchd.
+private const val DECIDED_KEY = "autoStartDecided.v3"
 
 actual object AutoStart {
     private val prefs = Preferences.userRoot().node("com/pulseweaver/heartbeat${channelSuffix()}")
@@ -55,11 +56,14 @@ actual object AutoStart {
     actual fun isAvailable(): Boolean = launcher != null
 
     actual fun isEnabled(): Boolean {
-        if (launcher == null) return false
+        if (launcher == null || !hasEntry()) return false
         return when {
-            isWindows -> reg("query", WINDOWS_RUN_KEY, "/v", entryDisplayName).ok && !disabledByWindows()
-            isMac -> Files.exists(macPlistPath)
-            else -> Files.exists(linuxDesktopPath)
+            isWindows -> !disabledByWindows()
+            // The file only says the agent was written. launchd has to have it loaded
+            // for the next login to honour it, and unloading is also what switching the
+            // entry off under System Settings' "Allow in the Background" does.
+            isMac -> macAgentLoaded()
+            else -> true
         }
     }
 
@@ -68,7 +72,9 @@ actual object AutoStart {
         // Enabling always rewrites the entry, which repairs a launcher path left
         // stale by a reinstall; removing one that was never registered is already
         // done, and asking the OS to delete it would only log a spurious failure.
-        val ok = if (!enabled && !isEnabled()) true else applyRegistration(enabled)
+        // The test is whether an entry exists at all, not whether the OS honours it:
+        // an entry the OS has switched off still has to be cleaned up on disable.
+        val ok = if (!enabled && !hasEntry()) true else applyRegistration(enabled)
         if (ok) {
             prefs.putBoolean(DECIDED_KEY, true)
             prefs.flush()
@@ -100,7 +106,13 @@ actual object AutoStart {
                     isMac ->
                         if (enabled) {
                             writeEntry(macPlistPath, launchAgentPlist(entryId, launcher.toString()))
+                            val outcome = bootstrapMacAgent()
+                            detail = outcome.output
+                            outcome.ok
                         } else {
+                            // Removing the plist is the whole of it — see bootstrapMacAgent
+                            // on why the loaded agent is left alone. It has already run its
+                            // one action for this session and is gone by the next login.
                             Files.deleteIfExists(macPlistPath)
                             true
                         }
@@ -125,9 +137,56 @@ actual object AutoStart {
         return ok
     }
 
+    /** Whether an entry exists at all, before asking whether the OS still honours it. */
+    private fun hasEntry(): Boolean =
+        when {
+            isWindows -> reg("query", WINDOWS_RUN_KEY, "/v", entryDisplayName).ok
+            isMac -> Files.exists(macPlistPath)
+            else -> Files.exists(linuxDesktopPath)
+        }
+
     private fun disabledByWindows(): Boolean {
         val outcome = reg("query", WINDOWS_STARTUP_APPROVED_KEY, "/v", entryDisplayName)
         return outcome.ok && startupApprovedIsDisabled(outcome.output)
+    }
+
+    // launchd's name for this user's GUI session. A JVM has no way to read its own uid, so
+    // it comes from `id`; a non-numeric answer means the call failed and the domain is
+    // unusable, which every caller has to treat as "cannot register".
+    private val guiDomain: String? by lazy {
+        run("id", "-u")
+            .takeIf { it.ok }
+            ?.output
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() && it.all(Char::isDigit) }
+            ?.let { "gui/$it" }
+    }
+
+    /** True when launchd currently holds the agent — the only state that survives to a login. */
+    private fun macAgentLoaded(): Boolean {
+        val domain = guiDomain ?: return false
+        return launchctl("print", "$domain/$entryId").ok
+    }
+
+    /**
+     * Hands the freshly written agent to launchd. Writing the plist alone only queues it for
+     * the next login, which is why a toggle that had only written the file could report a
+     * registration the OS knew nothing about.
+     *
+     * Never paired with a `bootout`, in either direction: booting a service out terminates
+     * its running process, and when the app was itself started at login that process is
+     * this one — the toggle would quit the app under the hand that flipped it. Nothing
+     * needs it. An agent already loaded refuses the bootstrap and stays as it is; a plist
+     * replaced on disk (a reinstall moved the launcher) is re-read at the next login, which
+     * is the only moment the agent has a job to do anyway.
+     */
+    private fun bootstrapMacAgent(): CommandOutcome {
+        val domain = guiDomain ?: return CommandOutcome(false, "could not resolve the launchd GUI domain")
+        val outcome = launchctl("bootstrap", domain, macPlistPath.toString())
+        // bootstrap reports failure for agents that are loaded — an already-bootstrapped
+        // service answers "Input/output error" — so launchd's own view of the agent is the
+        // verdict, not the exit status.
+        return if (macAgentLoaded()) CommandOutcome(true, outcome.output) else outcome
     }
 
     /**
@@ -138,7 +197,7 @@ actual object AutoStart {
      * and `reg` then parses the result as several parameters and rejects it. A
      * file carries the value verbatim, past any command-line quoting.
      */
-    private fun importRunEntry(launcher: Path): RegOutcome {
+    private fun importRunEntry(launcher: Path): CommandOutcome {
         val file = Files.createTempFile("pulseweaver-autostart", ".reg")
         return try {
             // reg only reads a Unicode .reg as UTF-16LE with a byte-order mark.
@@ -156,16 +215,20 @@ actual object AutoStart {
         return true
     }
 
-    private fun reg(vararg args: String): RegOutcome =
+    private fun reg(vararg args: String): CommandOutcome = run("reg", *args)
+
+    private fun launchctl(vararg args: String): CommandOutcome = run("launchctl", *args)
+
+    private fun run(vararg args: String): CommandOutcome =
         runCatching {
-            val process = ProcessBuilder("reg", *args).redirectErrorStream(true).start()
+            val process = ProcessBuilder(*args).redirectErrorStream(true).start()
             val output = process.inputStream.readAllBytes().decodeToString()
-            RegOutcome(process.waitFor() == 0, output.trim())
-        }.getOrElse { RegOutcome(false, "${it::class.simpleName}: ${it.message}") }
+            CommandOutcome(process.waitFor() == 0, output.trim())
+        }.getOrElse { CommandOutcome(false, "${it::class.simpleName}: ${it.message}") }
 }
 
-/** Exit status of a `reg` call plus whatever it printed, so failures can say why. */
-private class RegOutcome(
+/** Exit status of a helper command plus whatever it printed, so failures can say why. */
+private class CommandOutcome(
     val ok: Boolean,
     val output: String,
 )
