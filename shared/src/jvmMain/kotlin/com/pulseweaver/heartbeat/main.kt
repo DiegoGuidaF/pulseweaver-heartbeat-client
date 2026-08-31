@@ -19,6 +19,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.pulseweaver.heartbeat.platform.BackgroundScheduler
 import com.pulseweaver.heartbeat.platform.Log
+import com.pulseweaver.heartbeat.platform.SingleInstance
 import com.pulseweaver.heartbeat.service.HeartbeatResult
 import org.jetbrains.compose.resources.painterResource
 import pulseweaverheartbeat.shared.generated.resources.Res
@@ -28,7 +29,15 @@ private val ActiveAmber = Color(0xFFFFA94D)
 private val StoppedGrey = Color(0xFF9E9E9E)
 private val ErrorRed = Color(0xFFFA5252)
 
-fun main(args: Array<String>) =
+fun main(args: Array<String>) {
+    // Registering the login item starts the app straight away (launchd's RunAtLoad, the
+    // Windows Run value on the next sign-in), so a copy can arrive while one is already
+    // running. Second copies step aside quietly — exit 0, so launchd reads it as a job
+    // that finished rather than one that failed and is worth complaining about.
+    if (!SingleInstance.acquire()) {
+        Log.i("App", "another PulseWeaver Companion is already running on this channel — exiting")
+        return
+    }
     application {
         // Auto-started login items launch with --minimized so sign-in doesn't
         // pop a window; the app sits in the tray until asked for.
@@ -91,6 +100,7 @@ fun main(args: Array<String>) =
             )
         }
     }
+}
 
 /** The logo's bolt polygon, in the artwork's 64×64 viewBox coordinates. */
 private val boltPoints =
